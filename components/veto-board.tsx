@@ -37,7 +37,8 @@ function MapPreview({ alt, src }: { alt: string; src: string }) {
       className="object-cover"
       fill
       onError={() => setFailed(true)}
-      sizes="(max-width: 1280px) 100vw, 320px"
+      quality={56}
+      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
       src={src}
     />
   );
@@ -343,7 +344,7 @@ export function VetoBoard({
               </span>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+            <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-2 md:grid-cols-3">
               {derived.result.maps.length === 0 ? (
                 <div className="col-span-full bg-white/10 px-4 py-4 text-sm text-white/80">
                   Final maps will populate here as the veto progresses.
@@ -352,19 +353,17 @@ export function VetoBoard({
                 derived.result.maps.map((mapResult) => (
                   <div
                     key={`${mapResult.order}-${mapResult.map}`}
-                    className="border border-white/20 bg-[rgba(91,0,15,0.15)] px-3 py-3 text-center"
+                    className="flex min-h-32 flex-col justify-between border border-white/20 bg-[rgba(91,0,15,0.15)] px-3 py-3 text-center"
                   >
                     <div className="font-display text-[0.55rem] uppercase tracking-[0.18em] text-white/65">
                       Map {String(mapResult.order).padStart(2, "0")}
                     </div>
-                    <div className="mt-1 font-display text-[0.78rem] font-black uppercase tracking-[0.14em] text-white">
+                    <div className="flex min-h-[2.6rem] items-center justify-center font-display text-[0.8rem] font-black uppercase leading-tight tracking-[0.12em] text-white">
                       {MAP_LOOKUP[mapResult.map].label}
                     </div>
-                    {mapResult.startingSide ? (
-                      <div className="mt-2 font-display text-[0.55rem] uppercase tracking-[0.18em] text-white/75">
-                        {mapResult.startingSide}
-                      </div>
-                    ) : null}
+                    <div className="font-display text-[0.55rem] uppercase tracking-[0.18em] text-white/75">
+                      {mapResult.startingSide ?? "pending"}
+                    </div>
                   </div>
                 ))
               )}

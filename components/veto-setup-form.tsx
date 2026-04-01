@@ -143,7 +143,8 @@ export function VetoSetupForm({ disabled, onSubmit }: VetoSetupFormProps) {
                       selected ? "grayscale-0" : "grayscale-[0.7] group-hover:grayscale-0"
                     }`}
                     fill
-                    sizes="(max-width: 1280px) 100vw, 320px"
+                    quality={56}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                     src={mapMeta.imagePath}
                   />
                   <div

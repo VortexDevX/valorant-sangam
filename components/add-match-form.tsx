@@ -95,7 +95,7 @@ export function AddMatchForm({
 
         <div>
           <label className="label" htmlFor="team-b">
-            Team Bravo
+            Team OMEGA
           </label>
           <div className="tactical-input-wrap">
             <input

@@ -121,6 +121,7 @@ export const seriesResultSchema = z.object({
 export const bracketCreateSchema = z.object({
   title: z.string().trim().min(1, "Bracket title is required.").max(80, "Title is too long."),
   teamCount: z.coerce.number().int().min(1, "Minimum 1 team required.").max(32, "Maximum 32 teams allowed."),
+  format: z.enum(["bo1", "bo3", "bo5"]),
 });
 
 export const bracketTeamsSchema = z
@@ -143,6 +144,7 @@ export const bracketTeamsSchema = z
 export const bracketUpdateSchema = z.object({
   title: z.string().trim().min(1, "Bracket title is required.").max(80, "Title is too long.").optional(),
   teams: bracketTeamsSchema.optional(),
+  format: z.enum(["bo1", "bo3", "bo5"]).optional(),
 });
 
 export const bracketWinnerSchema = z.object({

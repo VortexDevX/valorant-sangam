@@ -1,4 +1,9 @@
 import { ObjectId } from "mongodb";
+import {
+  BracketSeriesConflictError,
+  hasLaterRoundBracketSeries,
+  syncBracketSeriesById,
+} from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
@@ -68,6 +73,20 @@ export async function PATCH(
       return Response.json({ error: "Result not found." }, { status: 404 });
     }
 
+    if (
+      serialized.bracket &&
+      serialized.overallScore.completed &&
+      (await hasLaterRoundBracketSeries(db, serialized.bracket.id, serialized.bracket.round))
+    ) {
+      return Response.json(
+        {
+          error:
+            "Later-round bracket series already exist. This completed result set can no longer be edited safely.",
+        },
+        { status: 409 },
+      );
+    }
+
     await db.collection("series").updateOne(
       { _id: resolved.objectId, "results.order": resolved.orderNumber },
       {
@@ -83,11 +102,19 @@ export async function PATCH(
     );
 
     const updated = await db.collection("series").findOne({ _id: resolved.objectId });
+    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+
+    if (serializedUpdated.bracket) {
+      await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
+    }
 
     return Response.json({
-      series: serializeSeries(updated as Record<string, unknown>),
+      series: serializedUpdated,
     });
   } catch (error) {
+    if (error instanceof BracketSeriesConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     logApiError("PATCH /api/series/[id]/results/[order]", error);
     return Response.json({ error: "Failed to update result." }, { status: 500 });
   }
@@ -123,6 +150,20 @@ export async function DELETE(
       return Response.json({ error: "Result not found." }, { status: 404 });
     }
 
+    if (
+      serialized.bracket &&
+      serialized.overallScore.completed &&
+      (await hasLaterRoundBracketSeries(db, serialized.bracket.id, serialized.bracket.round))
+    ) {
+      return Response.json(
+        {
+          error:
+            "Later-round bracket series already exist. This completed result set can no longer be changed safely.",
+        },
+        { status: 409 },
+      );
+    }
+
     await db.collection("series").updateOne(
       { _id: resolved.objectId },
       {
@@ -135,11 +176,19 @@ export async function DELETE(
     );
 
     const updated = await db.collection("series").findOne({ _id: resolved.objectId });
+    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+
+    if (serializedUpdated.bracket) {
+      await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
+    }
 
     return Response.json({
-      series: serializeSeries(updated as Record<string, unknown>),
+      series: serializedUpdated,
     });
   } catch (error) {
+    if (error instanceof BracketSeriesConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     logApiError("DELETE /api/series/[id]/results/[order]", error);
     return Response.json({ error: "Failed to delete result." }, { status: 500 });
   }

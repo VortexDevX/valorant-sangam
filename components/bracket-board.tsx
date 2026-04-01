@@ -29,6 +29,9 @@ type TournamentMatch = BaseMatch & {
   metaRound: number;
   metaMatch: number;
   winnerSeed: number | null;
+  winnerSource: "auto" | "series" | "manual" | null;
+  seriesId: string | null;
+  seriesScore: string | null;
   autoAdvanced: boolean;
   canPickWinner: boolean;
 };
@@ -147,6 +150,9 @@ function toTournamentMatches(bracket: BracketRecord): TournamentMatch[] {
       metaRound: match.round,
       metaMatch: match.match,
       winnerSeed: match.winnerSeed,
+      winnerSource: match.winnerSource,
+      seriesId: match.seriesId,
+      seriesScore: match.seriesScore,
       autoAdvanced: match.autoAdvanced,
       canPickWinner: match.canPickWinner,
     })),
@@ -187,6 +193,21 @@ function BracketMatchCard({
     typedMatch.canPickWinner &&
     !bottomParticipant.isBye &&
     typeof bottomParticipant.seed === "number";
+  const statusLabel = typedMatch.autoAdvanced
+    ? "Auto Advance"
+    : typedMatch.winnerSource === "series"
+      ? "Series Result"
+      : typedMatch.seriesId
+        ? "Linked Series"
+        : typedMatch.winnerSeed
+          ? "Completed"
+          : "Live";
+  const winnerName =
+    typedMatch.winnerSeed === topParticipant.seed
+      ? slotLabel(topParticipant, teamNameFallback)
+      : typedMatch.winnerSeed === bottomParticipant.seed
+        ? slotLabel(bottomParticipant, teamNameFallback)
+        : null;
 
   const shellStyle: CSSProperties = {
     width: "100%",
@@ -270,7 +291,14 @@ function BracketMatchCard({
         </span>
         <span
           style={{
-            color: typedMatch.autoAdvanced ? "#60dcb0" : "#7b8d9f",
+            color:
+              typedMatch.autoAdvanced
+                ? "#60dcb0"
+                : typedMatch.winnerSource === "series"
+                  ? "#ffb3b2"
+                  : typedMatch.seriesId
+                    ? "#9caec2"
+                    : "#7b8d9f",
             fontFamily: "var(--font-display), sans-serif",
             fontSize: "0.58rem",
             fontWeight: 800,
@@ -278,7 +306,7 @@ function BracketMatchCard({
             textTransform: "uppercase",
           }}
         >
-          {typedMatch.autoAdvanced ? "Auto Advance" : typedMatch.winnerSeed ? "Completed" : "Live"}
+          {statusLabel}
         </span>
       </div>
 
@@ -381,7 +409,48 @@ function BracketMatchCard({
       </div>
 
       <div style={{ minHeight: "1.1rem" }}>
-        {editable && typedMatch.canPickWinner && typedMatch.winnerSeed !== null ? (
+        {typedMatch.autoAdvanced ? (
+          <span
+            style={{
+              color: "#60dcb0",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            Advanced automatically because the opposing slot is a BYE.
+          </span>
+        ) : typedMatch.winnerSource === "series" && winnerName ? (
+          <span
+            style={{
+              color: "#ffb3b2",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            {typedMatch.seriesScore
+              ? `${winnerName} advanced from the linked series (${typedMatch.seriesScore}).`
+              : `${winnerName} advanced from the linked series result.`}
+          </span>
+        ) : typedMatch.seriesId ? (
+          <span
+            style={{
+              color: "#9caec2",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            Complete the linked series to advance this match.
+          </span>
+        ) : editable && typedMatch.canPickWinner && typedMatch.winnerSeed !== null ? (
           <button
             disabled={busy}
             onClick={() => {
@@ -402,6 +471,19 @@ function BracketMatchCard({
           >
             Clear Winner
           </button>
+        ) : typedMatch.winnerSource === "manual" && winnerName ? (
+          <span
+            style={{
+              color: "#b9c6d5",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            {winnerName} was advanced manually.
+          </span>
         ) : !typedMatch.canPickWinner && !typedMatch.autoAdvanced && !typedMatch.winnerSeed ? (
           <span
             style={{
@@ -439,11 +521,12 @@ export function BracketBoard({
               {bracket.title}
             </h2>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <span className="tactical-chip text-[var(--text-secondary)]">{bracket.teamCount} teams</span>
-            {bracket.championName ? (
-              <span className="tactical-chip text-[var(--success)]">Champion: {bracket.championName}</span>
-            ) : null}
+        <div className="flex flex-wrap gap-3">
+          <span className="tactical-chip text-[var(--text-secondary)]">{bracket.teamCount} teams</span>
+          <span className="tactical-chip text-[var(--text-secondary)]">{bracket.format}</span>
+          {bracket.championName ? (
+            <span className="tactical-chip text-[var(--success)]">Champion: {bracket.championName}</span>
+          ) : null}
           </div>
         </div>
 
@@ -478,6 +561,9 @@ export function BracketBoard({
           </span>
           <span className="tactical-chip text-[var(--text-secondary)]">
             {bracket.teamCount} teams
+          </span>
+          <span className="tactical-chip text-[var(--text-secondary)]">
+            {bracket.format}
           </span>
           {bracket.championName ? (
             <span className="tactical-chip text-[var(--success)]">

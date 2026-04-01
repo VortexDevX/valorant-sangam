@@ -1,3 +1,4 @@
+import { loadBracketLinkedSeries } from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { createDefaultBracketTeams, getBracketSize, serializeBracket } from "@/lib/brackets";
@@ -15,9 +16,16 @@ export async function GET() {
       .find({})
       .sort({ updatedAt: -1, createdAt: -1 })
       .toArray();
+    const linkedSeriesGroups = await Promise.all(
+      brackets.map((entry) => loadBracketLinkedSeries(db, String(entry._id))),
+    );
 
     return Response.json({
-      brackets: brackets.map((entry) => serializeBracket(entry as Record<string, unknown>)),
+      brackets: brackets.map((entry, index) =>
+        serializeBracket(entry as Record<string, unknown>, {
+          linkedSeries: linkedSeriesGroups[index],
+        }),
+      ),
     });
   } catch (error) {
     logApiError("GET /api/brackets", error);
@@ -51,6 +59,7 @@ export async function POST(request: Request) {
       slug: slugifyTeamName(title) || `bracket-${Date.now()}`,
       teamCount: parsed.data.teamCount,
       bracketSize: getBracketSize(parsed.data.teamCount),
+      format: parsed.data.format,
       teams: createDefaultBracketTeams(parsed.data.teamCount),
       winners: [],
       createdAt: now,

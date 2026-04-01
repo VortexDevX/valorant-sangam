@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BracketBoard } from "@/components/bracket-board";
 import { useAdminSession } from "@/components/admin-session";
+import { StatusToasts } from "@/components/status-toasts";
 import { buildSeedOrder, computeBracketView, normalizeBracketTeams } from "@/lib/brackets";
 import type { BracketRecord } from "@/types/bracket";
+import type { SeriesFormat } from "@/types/veto";
 
 interface AdminBracketWorkspaceProps {
   bracketId: string;
@@ -15,11 +17,14 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
   const { token } = useAdminSession();
   const [bracket, setBracket] = useState<BracketRecord | null>(null);
   const [title, setTitle] = useState("");
+  const [format, setFormat] = useState<SeriesFormat>("bo3");
   const [teams, setTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hasTeamChanges =
+    !!bracket && teams.some((entry, index) => entry !== bracket.teams[index]?.name);
 
   useEffect(() => {
     const loadBracket = async () => {
@@ -35,6 +40,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
 
         setBracket(payload.bracket);
         setTitle(payload.bracket.title);
+        setFormat(payload.bracket.format);
         setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Failed to load bracket.");
@@ -52,6 +58,16 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
     }
 
     const normalizedTeams = normalizeBracketTeams(teams);
+
+    if (!hasTeamChanges) {
+      return {
+        ...bracket,
+        title,
+        format,
+        teams: normalizedTeams,
+      } satisfies BracketRecord;
+    }
+
     const computed = computeBracketView({
       teamCount: bracket.teamCount,
       bracketSize: bracket.bracketSize,
@@ -62,17 +78,19 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
     return {
       ...bracket,
       title,
+      format,
       teams: normalizedTeams,
       rounds: computed.rounds,
       status: computed.status,
       championSeed: computed.championSeed,
       championName: computed.championName,
     } satisfies BracketRecord;
-  }, [bracket, teams, title]);
+  }, [bracket, format, hasTeamChanges, teams, title]);
 
   const hasUnsavedChanges =
     !!bracket &&
     (title !== bracket.title ||
+      format !== bracket.format ||
       teams.some((entry, index) => entry !== bracket.teams[index]?.name));
   const setupComplete =
     previewBracket !== null &&
@@ -122,7 +140,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, teams }),
+        body: JSON.stringify({ title, format, teams }),
       });
       const payload = await response.json();
 
@@ -132,6 +150,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
 
       setBracket(payload.bracket);
       setTitle(payload.bracket.title);
+      setFormat(payload.bracket.format);
       setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
       setMessage("Bracket setup saved.");
     } catch (saveError) {
@@ -163,6 +182,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
 
       setBracket(payload.bracket);
       setTitle(payload.bracket.title);
+      setFormat(payload.bracket.format);
       setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
       setMessage("Bracket updated.");
     } catch (pickError) {
@@ -188,6 +208,12 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
 
   return (
     <div className="space-y-8">
+      <StatusToasts
+        error={error}
+        success={message}
+        onErrorDismiss={() => setError(null)}
+        onSuccessDismiss={() => setMessage(null)}
+      />
       <section className="space-y-4">
         <Link className="eyebrow" href="/admin/brackets">
           Back To Brackets
@@ -207,6 +233,9 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
             <span className="tactical-chip text-[var(--text-secondary)]">
               {previewBracket.teamCount} teams
             </span>
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              {previewBracket.format}
+            </span>
             {previewBracket.championName ? (
               <span className="tactical-chip text-[var(--success)]">
                 {previewBracket.championName}
@@ -215,9 +244,6 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           </div>
         </div>
       </section>
-
-      {message ? <div className="status-success">{message}</div> : null}
-      {error ? <div className="status-error">{error}</div> : null}
 
       <form className="space-y-6" onSubmit={saveDetails}>
         <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
@@ -228,7 +254,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
                 {previewBracket.title}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-                Team entry mirrors the real round-one bracket order. Protected seeds still keep their BYE slots.
+                Team entry mirrors the real round-one bracket order. Save the seeded list first, then generated series will control normal bracket progression.
               </p>
             </div>
 
@@ -236,6 +262,10 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
               <button className="button-primary sm:min-w-56" disabled={busy} type="submit">
                 {busy ? "Saving..." : "Save Bracket"}
               </button>
+
+              <Link className="button-secondary sm:min-w-56" href="/admin">
+                Open Series Hub
+              </Link>
 
               <Link className="button-secondary sm:min-w-56" href={`/brackets/${previewBracket._id}`}>
                 Open Public Bracket
@@ -258,13 +288,30 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
               </div>
             </div>
 
+            <div>
+              <label className="label" htmlFor="bracket-workspace-format">
+                Match Format
+              </label>
+              <select
+                id="bracket-workspace-format"
+                className="select"
+                disabled={busy}
+                value={format}
+                onChange={(event) => setFormat(event.target.value as SeriesFormat)}
+              >
+                <option value="bo1">BO1</option>
+                <option value="bo3">BO3</option>
+                <option value="bo5">BO5</option>
+              </select>
+            </div>
+
             {!setupComplete ? (
               <div className="status-info lg:max-w-md">
-                Add all {previewBracket.teamCount} team names before selecting winners.
+                Add all {previewBracket.teamCount} team names before generating round 1 series.
               </div>
             ) : hasUnsavedChanges ? (
               <div className="status-info lg:max-w-md">
-                Save the bracket before continuing with winner selection.
+                Save the bracket to refresh the generated series list.
               </div>
             ) : null}
           </div>

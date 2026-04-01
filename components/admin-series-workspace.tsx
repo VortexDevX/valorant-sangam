@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
 import { VetoBoard } from "@/components/veto-board";
 import { MAPS } from "@/lib/map-pool";
-import { getNextSeriesMap } from "@/lib/series";
+import { createBracketSeriesSummary, getNextSeriesMap } from "@/lib/series";
 import { deriveVetoState } from "@/lib/veto-engine";
 import type { MapId } from "@/lib/map-pool";
 import type { SeriesRecord } from "@/types/series";
@@ -297,10 +298,23 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
 
   return (
     <div className="space-y-8">
+      <StatusToasts
+        error={error}
+        success={message}
+        onErrorDismiss={() => setError(null)}
+        onSuccessDismiss={() => setMessage(null)}
+      />
       <section className="space-y-4">
-        <Link className="eyebrow" href="/admin">
-          Back To Series Hub
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link className="eyebrow" href="/admin">
+            Back To Series Hub
+          </Link>
+          {series.bracket ? (
+            <Link className="eyebrow" href={`/admin/brackets/${series.bracket.id}`}>
+              Open Linked Bracket
+            </Link>
+          ) : null}
+        </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="page-title">{series.teamA} vs {series.teamB}</h1>
@@ -316,12 +330,14 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
             <span className="tactical-chip text-[var(--success)]">
               {series.overallScore.teamA}-{series.overallScore.teamB}
             </span>
+            {series.bracket ? (
+              <span className="tactical-chip text-[var(--text-secondary)]">
+                {createBracketSeriesSummary(series)}
+              </span>
+            ) : null}
           </div>
         </div>
       </section>
-
-      {message ? <div className="status-success">{message}</div> : null}
-      {error ? <div className="status-error">{error}</div> : null}
 
       {!series.veto ? (
         <section className="space-y-6">

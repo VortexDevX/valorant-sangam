@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
 import type { BracketCreateInput, BracketRecord } from "@/types/bracket";
 
 const initialForm: BracketCreateInput = {
   title: "",
   teamCount: 8,
+  format: "bo3",
 };
 
 export function AdminBracketHub() {
@@ -35,7 +37,11 @@ export function AdminBracketHub() {
 
       setBrackets(payload.brackets);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load brackets.");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load brackets.",
+      );
     } finally {
       setLoading(false);
     }
@@ -69,7 +75,11 @@ export function AdminBracketHub() {
 
       router.push(`/admin/brackets/${payload.bracket._id}`);
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create bracket.");
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Failed to create bracket.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -102,7 +112,11 @@ export function AdminBracketHub() {
       setMessage("Bracket deleted.");
       await loadBrackets();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete bracket.");
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete bracket.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -110,14 +124,24 @@ export function AdminBracketHub() {
 
   return (
     <section className="space-y-8" id="brackets">
+      <StatusToasts
+        error={error}
+        success={message}
+        onErrorDismiss={() => setError(null)}
+        onSuccessDismiss={() => setMessage(null)}
+      />
       <section className="grid gap-8 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <form className="panel px-6 py-6 md:px-8 md:py-8" onSubmit={handleCreate}>
+        <form
+          className="panel px-6 py-6 md:px-8 md:py-8"
+          onSubmit={handleCreate}
+        >
           <p className="eyebrow">Create Bracket</p>
           <h2 className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
             New Bracket
           </h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-            Enter a title and total teams. The bracket starts empty, and you choose the first-round matchups in the workspace.
+          <p className="mt-3 text-sm leading-7 text-(--text-secondary)">
+            Enter a title, total teams, and series format. The bracket starts
+            empty, and you choose the first-round matchups in the workspace.
           </p>
 
           <div className="mt-8 space-y-5">
@@ -132,7 +156,10 @@ export function AdminBracketHub() {
                   placeholder="ENTER BRACKET TITLE"
                   value={formValue.title}
                   onChange={(event) =>
-                    setFormValue((current) => ({ ...current, title: event.target.value }))
+                    setFormValue((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -153,15 +180,42 @@ export function AdminBracketHub() {
                   }))
                 }
               >
-                {Array.from({ length: 32 }, (_, index) => index + 1).map((count) => (
-                  <option key={count} value={count}>
-                    {count} Teams
-                  </option>
-                ))}
+                {Array.from({ length: 32 }, (_, index) => index + 1).map(
+                  (count) => (
+                    <option key={count} value={count}>
+                      {count} Teams
+                    </option>
+                  ),
+                )}
               </select>
             </div>
 
-            <button className="button-primary w-full" disabled={submitting} type="submit">
+            <div>
+              <label className="label" htmlFor="bracket-format">
+                Match Format
+              </label>
+              <select
+                id="bracket-format"
+                className="select"
+                value={formValue.format}
+                onChange={(event) =>
+                  setFormValue((current) => ({
+                    ...current,
+                    format: event.target.value as BracketCreateInput["format"],
+                  }))
+                }
+              >
+                <option value="bo1">BO1</option>
+                <option value="bo3">BO3</option>
+                <option value="bo5">BO5</option>
+              </select>
+            </div>
+
+            <button
+              className="button-primary w-full"
+              disabled={submitting}
+              type="submit"
+            >
               {submitting ? "Creating..." : "Create Bracket"}
             </button>
           </div>
@@ -180,8 +234,6 @@ export function AdminBracketHub() {
             </span>
           </div>
 
-          {message ? <div className="status-success">{message}</div> : null}
-          {error ? <div className="status-error">{error}</div> : null}
           {loading ? (
             <div className="status-info">Loading brackets...</div>
           ) : brackets.length === 0 ? (
@@ -189,7 +241,10 @@ export function AdminBracketHub() {
           ) : (
             <div className="space-y-3">
               {brackets.map((bracket) => (
-                <article key={bracket._id} className="bg-[var(--bg-panel-low)] px-5 py-5 md:px-6 md:py-6">
+                <article
+                  key={bracket._id}
+                  className="panel px-5 py-5 md:px-6 md:py-6"
+                >
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
@@ -198,6 +253,9 @@ export function AdminBracketHub() {
                         </span>
                         <span className="tactical-chip text-[var(--text-secondary)]">
                           {bracket.teamCount} teams
+                        </span>
+                        <span className="tactical-chip text-[var(--text-secondary)]">
+                          {bracket.format}
                         </span>
                         {bracket.championName ? (
                           <span className="tactical-chip text-[var(--success)]">
@@ -209,12 +267,17 @@ export function AdminBracketHub() {
                         {bracket.title}
                       </h3>
                       <p className="text-sm text-[var(--text-secondary)]">
-                        {bracket.rounds.length} round{bracket.rounds.length > 1 ? "s" : ""} | {bracket.rounds[0]?.matches.length ?? 0} opening matches
+                        {bracket.rounds.length} round
+                        {bracket.rounds.length > 1 ? "s" : ""} |{" "}
+                        {bracket.rounds[0]?.matches.length ?? 0} opening matches
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <Link className="button-primary" href={`/admin/brackets/${bracket._id}`}>
+                      <Link
+                        className="button-primary"
+                        href={`/admin/brackets/${bracket._id}`}
+                      >
                         Open Bracket
                       </Link>
                       <button

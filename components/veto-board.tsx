@@ -170,8 +170,10 @@ export function VetoBoard({
             {session.mapPool.map((mapId) => {
               const mapMeta = MAP_LOOKUP[mapId];
               const state = mapState(mapMeta.id, derived);
+              const isSideTarget = sideTargetMap?.map === mapMeta.id;
               const canUndoMap =
                 !busy &&
+                !isSideTarget &&
                 !!latestAction?.map &&
                 latestAction.map === mapMeta.id &&
                 (latestAction.type === "ban" ||
@@ -182,7 +184,6 @@ export function VetoBoard({
                 state === "available" &&
                 nextStep &&
                 !busy;
-              const isSideTarget = sideTargetMap?.map === mapMeta.id;
               const isDeciderTarget =
                 nextStep?.type === "decider" &&
                 derived.availableMaps.length === 1 &&
@@ -245,7 +246,7 @@ export function VetoBoard({
                   </div>
 
                   {isSideTarget ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[rgba(5,15,25,0.72)] px-4 backdrop-blur-sm">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[rgba(5,15,25,0.9)] px-4">
                       <span className="font-display text-[0.58rem] font-black uppercase tracking-[0.22em] text-[var(--text-accent)]">
                         Side Selection
                       </span>
@@ -253,7 +254,8 @@ export function VetoBoard({
                         <button
                           className="flex-1 bg-white px-3 py-2 font-display text-[0.72rem] font-black uppercase tracking-[0.16em] text-[var(--bg-app)]"
                           disabled={busy}
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             void onApply({ side: "atk" });
                           }}
                           type="button"
@@ -263,7 +265,8 @@ export function VetoBoard({
                         <button
                           className="flex-1 bg-[var(--bg-panel-high)] px-3 py-2 font-display text-[0.72rem] font-black uppercase tracking-[0.16em] text-white"
                           disabled={busy}
-                          onClick={() => {
+                          onClick={(event) => {
+                            event.stopPropagation();
                             void onApply({ side: "def" });
                           }}
                           type="button"
@@ -286,6 +289,14 @@ export function VetoBoard({
                   >
                     {tileBody}
                   </button>
+                );
+              }
+
+              if (isSideTarget) {
+                return (
+                  <div key={mapMeta.id} className={tileClasses}>
+                    {tileBody}
+                  </div>
                 );
               }
 

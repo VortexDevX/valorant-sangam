@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { StatusToasts } from "@/components/status-toasts";
 
 interface AdminLoginFormProps {
   onAuthenticated: (token: string) => void;
@@ -47,6 +48,7 @@ export function AdminLoginForm({ onAuthenticated }: AdminLoginFormProps) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
       <div>
         <label className="label" htmlFor="username">
           Username
@@ -79,8 +81,6 @@ export function AdminLoginForm({ onAuthenticated }: AdminLoginFormProps) {
           />
         </div>
       </div>
-
-      {error ? <div className="status-error">{error}</div> : null}
 
       <button className="button-primary w-full" disabled={submitting} type="submit">
         {submitting ? "Logging in..." : "Admin Login"}

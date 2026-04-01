@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { PublicBracketCard } from "@/components/public-bracket-card";
 import { PublicUpcomingMatchCard } from "@/components/public-upcoming-match-card";
+import { StatusToasts } from "@/components/status-toasts";
 import { getNextSeriesMap } from "@/lib/series";
 import type { BracketRecord } from "@/types/bracket";
 import { PublicSeriesCard } from "@/components/public-series-card";
@@ -58,27 +59,34 @@ export default function Home() {
   const upcomingMatches = upcoming
     .map((entry) => ({ series: entry, mapSlot: getNextSeriesMap(entry) }))
     .filter(
-      (entry): entry is { series: SeriesRecord; mapSlot: NonNullable<ReturnType<typeof getNextSeriesMap>> } =>
-        entry.mapSlot !== null,
+      (
+        entry,
+      ): entry is {
+        series: SeriesRecord;
+        mapSlot: NonNullable<ReturnType<typeof getNextSeriesMap>>;
+      } => entry.mapSlot !== null,
     );
 
   return (
     <main className="app-shell">
-      <header className="tactical-topbar border-l-4 border-[var(--bg-accent)]">
+      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
+      <header className="tactical-topbar">
         <div className="page-wrap !py-0">
-          <div className="flex min-h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="tactical-topbar-inner">
+            <div className="tactical-topbar-side tactical-topbar-side--left">
               <span className="tactical-accent" />
-              <span className="tactical-brand text-2xl tracking-[0.12em] text-[var(--bg-accent)]">
+              <span className="tactical-brand tactical-topbar-brand">
                 Valorant Sangam
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="h-2 w-2 animate-pulse bg-[var(--bg-accent)]" />
-              <span className="font-display text-[0.68rem] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                Match Hub
-              </span>
+            <div className="tactical-topbar-plate">
+              <span className="tactical-topbar-plate-label">Home</span>
+            </div>
+
+            <div className="tactical-topbar-side tactical-topbar-side--right">
+              <span className="tactical-accent tactical-accent--small" />
+              <span className="tactical-topbar-meta">Match Hub</span>
             </div>
           </div>
         </div>
@@ -106,7 +114,8 @@ export default function Home() {
             </div>
             <h1 className="page-title">Valorant Sangam</h1>
             <p className="mt-4 max-w-3xl border-l-2 border-[var(--bg-accent)] pl-4 text-sm leading-7 text-[var(--text-secondary)] md:text-lg">
-              Follow upcoming matches, completed series, and team pages from one place.
+              Follow upcoming matches, completed series, and team pages from one
+              place.
               <span className="mono mt-2 block text-[0.72rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 Public schedule and results
               </span>
@@ -123,7 +132,8 @@ export default function Home() {
                 Tournament Board
               </h2>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Upcoming matches and the full series list, with links to every team page.
+                Upcoming matches and the full series list, with links to every
+                team page.
               </p>
             </div>
 
@@ -134,29 +144,36 @@ export default function Home() {
             </div>
           </div>
 
-          {error ? <div className="status-error">{error}</div> : null}
           {loading ? (
             <div className="status-info">Loading series...</div>
           ) : (
             <div className="space-y-10">
               <section className="space-y-4">
-                <div className="flex items-end justify-between gap-4">
-                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                    Upcoming Matches
-                  </h3>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-3">
+                    <span className="section-accent section-accent--upcoming">
+                      Upcoming Maps
+                    </span>
+                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                      Upcoming Matches
+                    </h3>
+                  </div>
                   <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {upcomingMatches.length} ready
                   </span>
                 </div>
                 {upcomingMatches.length === 0 ? (
-                  <div className="empty-state">No upcoming matches are ready yet.</div>
+                  <div className="empty-state">
+                    No upcoming matches are ready yet.
+                  </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
                     {upcomingMatches.map((entry) => (
                       <PublicUpcomingMatchCard
                         key={`${entry.series._id}-${entry.mapSlot.order}`}
                         mapSlot={entry.mapSlot}
                         series={entry.series}
+                        withMapBackdrop
                       />
                     ))}
                   </div>
@@ -164,10 +181,15 @@ export default function Home() {
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-end justify-between gap-4">
-                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                    Series
-                  </h3>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-3">
+                    <span className="section-accent section-accent--series">
+                      Series Feed
+                    </span>
+                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                      Series
+                    </h3>
+                  </div>
                   <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {series.length} total
                   </span>
@@ -175,19 +197,29 @@ export default function Home() {
                 {series.length === 0 ? (
                   <div className="empty-state">No series added yet.</div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
                     {series.map((entry) => (
-                      <PublicSeriesCard key={entry._id} series={entry} />
+                      <PublicSeriesCard
+                        key={entry._id}
+                        compact
+                        series={entry}
+                        withMapBackdrop
+                      />
                     ))}
                   </div>
                 )}
               </section>
 
               <section className="space-y-4">
-                <div className="flex items-end justify-between gap-4">
-                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                    Brackets
-                  </h3>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-3">
+                    <span className="section-accent section-accent--bracket">
+                      Bracket Archive
+                    </span>
+                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                      Brackets
+                    </h3>
+                  </div>
                   <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {brackets.length} total
                   </span>
@@ -195,7 +227,7 @@ export default function Home() {
                 {brackets.length === 0 ? (
                   <div className="empty-state">No brackets added yet.</div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {brackets.map((bracket) => (
                       <PublicBracketCard key={bracket._id} bracket={bracket} />
                     ))}
@@ -207,11 +239,11 @@ export default function Home() {
         </section>
       </div>
 
-      <footer className="bg-[var(--bg-panel-lowest)] px-6 py-12">
+      <footer className="bg-[var(--bg-panel-lowest)] px-4 py-12 sm:px-6">
         <div className="page-wrap !py-0">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="font-display text-xl font-black uppercase tracking-[0.3em] text-[var(--bg-accent)]">
+              <div className="font-display text-lg font-black uppercase tracking-[0.18em] text-[var(--bg-accent)] sm:text-xl sm:tracking-[0.3em]">
                 Valorant Sangam
               </div>
               <div className="mt-2 font-display text-[0.68rem] uppercase tracking-[0.14em] text-[var(--text-muted)]">

@@ -1,3 +1,5 @@
+import type { SeriesFormat } from "@/types/veto";
+
 export type BracketStatus = "draft" | "in_progress" | "completed";
 
 export interface BracketSeedRecord {
@@ -26,6 +28,9 @@ export interface BracketMatchRecord {
   bottom: BracketSlotRecord | null;
   winnerSeed: number | null;
   winnerName: string | null;
+  winnerSource: "auto" | "series" | "manual" | null;
+  seriesId: string | null;
+  seriesScore: string | null;
   autoAdvanced: boolean;
   canPickWinner: boolean;
   isComplete: boolean;
@@ -43,6 +48,7 @@ export interface BracketRecord {
   slug: string;
   teamCount: number;
   bracketSize: number;
+  format: SeriesFormat;
   teams: BracketSeedRecord[];
   winners: BracketWinnerSelection[];
   rounds: BracketRoundRecord[];
@@ -56,4 +62,5 @@ export interface BracketRecord {
 export interface BracketCreateInput {
   title: string;
   teamCount: number;
+  format: SeriesFormat;
 }

@@ -1,4 +1,10 @@
 import { ObjectId } from "mongodb";
+import {
+  BracketSeriesConflictError,
+  hasLaterRoundBracketSeries,
+  loadBracketLinkedSeries,
+  syncBracketSeries,
+} from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { serializeBracket } from "@/lib/brackets";
@@ -68,7 +74,23 @@ export async function PATCH(
       return Response.json({ error: "Bracket not found." }, { status: 404 });
     }
 
-    const bracket = serializeBracket(existing as Record<string, unknown>);
+    const linkedSeries = await loadBracketLinkedSeries(db, String(resolved.objectId));
+    const linkedMatchSeries = linkedSeries.find(
+      (entry) =>
+        entry.bracket?.round === resolved.roundNumber &&
+        entry.bracket?.match === resolved.matchNumber,
+    );
+
+    if (linkedMatchSeries) {
+      return Response.json(
+        { error: "This bracket match is controlled by its generated series results." },
+        { status: 400 },
+      );
+    }
+
+    const bracket = serializeBracket(existing as Record<string, unknown>, {
+      linkedSeries,
+    });
     const targetRound = bracket.rounds.find((entry) => entry.round === resolved.roundNumber);
     const targetMatch = targetRound?.matches.find((entry) => entry.match === resolved.matchNumber);
 
@@ -97,6 +119,24 @@ export async function PATCH(
       );
     }
 
+    const currentWinnerSeed =
+      bracket.winners.find(
+        (entry) => entry.round === resolved.roundNumber && entry.match === resolved.matchNumber,
+      )?.winnerSeed ?? null;
+
+    if (
+      currentWinnerSeed !== parsed.data.winnerSeed &&
+      (await hasLaterRoundBracketSeries(db, bracket._id, resolved.roundNumber))
+    ) {
+      return Response.json(
+        {
+          error:
+            "Later-round generated series already exist for this bracket. Update those first before changing this winner.",
+        },
+        { status: 409 },
+      );
+    }
+
     const nextSelections = bracket.winners.filter(
       (entry) => !(entry.round === resolved.roundNumber && entry.match === resolved.matchNumber),
     );
@@ -122,10 +162,22 @@ export async function PATCH(
 
     const updated = await db.collection("brackets").findOne({ _id: resolved.objectId });
 
+    if (!updated) {
+      return Response.json({ error: "Bracket not found." }, { status: 404 });
+    }
+
+    await syncBracketSeries(db, serializeBracket(updated as Record<string, unknown>), admin);
+    const refreshedLinkedSeries = await loadBracketLinkedSeries(db, String(resolved.objectId));
+
     return Response.json({
-      bracket: serializeBracket(updated as Record<string, unknown>),
+      bracket: serializeBracket(updated as Record<string, unknown>, {
+        linkedSeries: refreshedLinkedSeries,
+      }),
     });
   } catch (error) {
+    if (error instanceof BracketSeriesConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     logApiError("PATCH /api/brackets/[id]/matches/[round]/[match]", error);
     return Response.json({ error: "Failed to update match winner." }, { status: 500 });
   }

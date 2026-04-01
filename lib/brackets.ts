@@ -8,6 +8,7 @@ import type {
   BracketStatus,
   BracketWinnerSelection,
 } from "@/types/bracket";
+import type { SeriesRecord } from "@/types/series";
 
 interface Competitor {
   seed: number;
@@ -20,6 +21,12 @@ interface BracketComputation {
   status: BracketStatus;
   championSeed: number | null;
   championName: string | null;
+}
+
+interface SeriesResolution {
+  seriesId: string;
+  winnerSeed: number;
+  scoreline: string;
 }
 
 function toPositivePowerOfTwo(value: number) {
@@ -132,11 +139,71 @@ function buildWinnerMap(winners: BracketWinnerSelection[]) {
   return new Map(winners.map((entry) => [`${entry.round}-${entry.match}`, entry.winnerSeed]));
 }
 
+function buildLinkedSeriesMap(series: SeriesRecord[]) {
+  const grouped = new Map<string, SeriesRecord>();
+
+  for (const entry of series) {
+    if (!entry.bracket) {
+      continue;
+    }
+
+    const key = `${entry.bracket.round}-${entry.bracket.match}`;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, entry);
+    }
+  }
+
+  return grouped;
+}
+
+function resolveSeriesOutcome(
+  linkedSeries: SeriesRecord | undefined,
+  top: BracketSlotRecord | null,
+  bottom: BracketSlotRecord | null,
+): SeriesResolution | null {
+  if (
+    !linkedSeries ||
+    !linkedSeries.overallScore.completed ||
+    linkedSeries.overallScore.winner === null ||
+    !top?.slug ||
+    !bottom?.slug ||
+    typeof top.seed !== "number" ||
+    typeof bottom.seed !== "number"
+  ) {
+    return null;
+  }
+
+  const winnerSlug =
+    linkedSeries.overallScore.winner === "teamA"
+      ? linkedSeries.teamASlug
+      : linkedSeries.teamBSlug;
+
+  if (winnerSlug === top.slug) {
+    return {
+      seriesId: linkedSeries._id,
+      winnerSeed: top.seed,
+      scoreline: `${linkedSeries.overallScore.teamA}-${linkedSeries.overallScore.teamB}`,
+    };
+  }
+
+  if (winnerSlug === bottom.slug) {
+    return {
+      seriesId: linkedSeries._id,
+      winnerSeed: bottom.seed,
+      scoreline: `${linkedSeries.overallScore.teamA}-${linkedSeries.overallScore.teamB}`,
+    };
+  }
+
+  return null;
+}
+
 export function computeBracketView(input: {
   teamCount: number;
   bracketSize: number;
   teams: BracketSeedRecord[];
   winners: BracketWinnerSelection[];
+  linkedSeries?: SeriesRecord[];
 }): BracketComputation {
   const readyTeams = input.teams
     .filter((entry) => entry.name.trim().length > 0 && entry.slug)
@@ -159,6 +226,7 @@ export function computeBracketView(input: {
 
   const totalRounds = Math.log2(input.bracketSize);
   const winnerMap = buildWinnerMap(input.winners);
+  const linkedSeriesMap = buildLinkedSeriesMap(input.linkedSeries ?? []);
   const seedOrder = buildSeedOrder(input.bracketSize);
   const competitorsBySeed = new Map<number, Competitor>(
     readyTeams.map((entry) => [entry.seed, entry]),
@@ -194,20 +262,37 @@ export function computeBracketView(input: {
       const bottom = round === 1
         ? buildFirstRoundSlot(initialBottom!.seed, input.teamCount, bottomCompetitor)
         : buildSlot(bottomCompetitor);
+      const linkedSeries = linkedSeriesMap.get(`${round}-${matchNumber}`);
       const autoWinner =
         round === 1 && topCompetitor && initialBottom?.isBye
           ? topCompetitor
           : round === 1 && initialTop?.isBye && bottomCompetitor
             ? bottomCompetitor
             : null;
+      const seriesResolution =
+        autoWinner === null
+          ? resolveSeriesOutcome(linkedSeries, top, bottom)
+          : null;
+      const seriesWinner =
+        seriesResolution === null
+          ? null
+          : availableCompetitors.find((entry) => entry.seed === seriesResolution.winnerSeed) ?? null;
       const storedWinnerSeed = winnerMap.get(`${round}-${matchNumber}`) ?? null;
       const manualWinner =
-        autoWinner === null
+        autoWinner === null && seriesWinner === null
           ? availableCompetitors.find((entry) => entry.seed === storedWinnerSeed) ?? null
           : null;
-      const winner = autoWinner ?? manualWinner ?? null;
+      const winner = autoWinner ?? seriesWinner ?? manualWinner ?? null;
+      const winnerSource =
+        autoWinner !== null
+          ? "auto"
+          : seriesWinner !== null
+            ? "series"
+            : manualWinner !== null
+              ? "manual"
+              : null;
 
-      if (manualWinner) {
+      if (seriesWinner || manualWinner) {
         hasManualProgress = true;
       }
 
@@ -222,9 +307,13 @@ export function computeBracketView(input: {
         bottom,
         winnerSeed: winner?.seed ?? null,
         winnerName: winner?.name ?? null,
+        winnerSource,
+        seriesId: linkedSeries?._id ?? null,
+        seriesScore: seriesResolution?.scoreline ?? null,
         autoAdvanced: autoWinner !== null,
         canPickWinner:
           autoWinner === null &&
+          !linkedSeries &&
           availableCompetitors.length === 2 &&
           !top?.isBye &&
           !bottom?.isBye,
@@ -249,7 +338,10 @@ export function computeBracketView(input: {
   };
 }
 
-export function serializeBracket(source: Record<string, unknown>): BracketRecord {
+export function serializeBracket(
+  source: Record<string, unknown>,
+  options?: { linkedSeries?: SeriesRecord[] },
+): BracketRecord {
   const teamCount = Number(source.teamCount);
   const bracketSize = Number(source.bracketSize || getBracketSize(teamCount));
   const teams = Array.isArray(source.teams)
@@ -293,6 +385,7 @@ export function serializeBracket(source: Record<string, unknown>): BracketRecord
     bracketSize,
     teams,
     winners,
+    linkedSeries: options?.linkedSeries,
   });
 
   return {
@@ -301,6 +394,10 @@ export function serializeBracket(source: Record<string, unknown>): BracketRecord
     slug: String(source.slug),
     teamCount,
     bracketSize,
+    format:
+      source.format === "bo1" || source.format === "bo5"
+        ? source.format
+        : "bo3",
     teams,
     winners,
     rounds: computed.rounds,

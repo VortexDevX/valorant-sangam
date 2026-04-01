@@ -56,6 +56,7 @@ export async function POST(request: Request) {
       teamB,
       teamASlug,
       teamBSlug,
+      bracket: null,
       format: parsed.data.format,
       veto: null,
       results: [],

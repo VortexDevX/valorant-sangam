@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
+import { Barlow, Geist_Mono, Teko } from "next/font/google";
 import "./globals.css";
 
-const bodyFont = Inter({
+const bodyFont = Barlow({
   variable: "--font-body",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -12,8 +13,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const displayFont = Space_Grotesk({
+const displayFont = Teko({
   variable: "--font-display",
+  weight: ["500", "600", "700"],
   subsets: ["latin"],
 });
 

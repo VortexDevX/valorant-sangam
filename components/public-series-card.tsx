@@ -1,13 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { MAP_LOOKUP } from "@/lib/map-pool";
+import { createBracketSeriesSummary, getNextSeriesMap } from "@/lib/series";
 import type { SeriesRecord } from "@/types/series";
 
 interface PublicSeriesCardProps {
   series: SeriesRecord;
   compact?: boolean;
   focusTeamSlug?: string;
+  withMapBackdrop?: boolean;
 }
 
 function getScoreTone(series: SeriesRecord, focusTeamSlug: string | undefined, winner: SeriesRecord["results"][number]["winner"]) {
@@ -39,10 +42,37 @@ function getSeriesStatusLabel(status: SeriesRecord["status"]) {
   }
 }
 
-export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: PublicSeriesCardProps) {
+export function PublicSeriesCard({
+  series,
+  compact = false,
+  focusTeamSlug,
+  withMapBackdrop = false,
+}: PublicSeriesCardProps) {
+  const visibleResults = compact ? series.results.slice(0, 2) : series.results;
+  const backdropMap =
+    getNextSeriesMap(series)?.map ??
+    series.results[series.results.length - 1]?.map ??
+    series.veto?.result.maps[0]?.map ??
+    null;
+
   return (
-    <article className="bg-[var(--bg-panel-low)] px-5 py-5 md:px-6 md:py-6">
-      <div className="space-y-5">
+    <article className="public-card public-card--series px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
+      {withMapBackdrop && compact && backdropMap ? (
+        <>
+          <div className="pointer-events-none absolute inset-0 opacity-[0.18]">
+            <Image
+              alt={MAP_LOOKUP[backdropMap].label}
+              className="h-full w-full object-cover"
+              fill
+              quality={48}
+              sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
+              src={MAP_LOOKUP[backdropMap].imagePath}
+            />
+          </div>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,15,25,0.56),rgba(5,15,25,0.88)_34%,rgba(5,15,25,0.96))]" />
+        </>
+      ) : null}
+      <div className="public-card-shell">
         <div className="flex flex-wrap items-center gap-3">
           <span className="tactical-chip text-[var(--text-accent)]">
             {getSeriesStatusLabel(series.status)}
@@ -50,6 +80,11 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
           <span className="tactical-chip text-[var(--text-secondary)]">
             {series.format}
           </span>
+          {series.bracket ? (
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              {createBracketSeriesSummary(series)}
+            </span>
+          ) : null}
           {series.results.length > 0 ? (
             <span className="tactical-chip text-[var(--success)]">
               {series.overallScore.teamA}-{series.overallScore.teamB}
@@ -57,18 +92,18 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
           ) : null}
         </div>
 
-        <div className="grid items-center gap-4 bg-[var(--bg-panel)] px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
+        <div className="grid items-center justify-items-center gap-3 bg-[var(--bg-panel)] px-4 py-4 text-center md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:justify-items-stretch md:px-5 md:text-left">
           <Link
-            className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em] transition hover:text-[var(--text-accent)] md:justify-self-end md:text-right md:text-3xl"
+            className={`min-w-0 break-words font-display font-black uppercase leading-none tracking-[-0.05em] transition hover:text-[var(--text-accent)] md:justify-self-end md:text-right ${compact ? "text-lg sm:text-xl md:text-2xl" : "text-xl sm:text-2xl md:text-3xl"}`}
             href={`/team/${series.teamASlug}`}
           >
             {series.teamA}
           </Link>
-          <span className="flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-white/8 bg-[var(--bg-panel-lowest)] font-display text-sm font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] md:h-12 md:w-12 md:text-base">
+          <span className="my-1 flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-white/8 bg-[var(--bg-panel-lowest)] font-display text-sm font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] md:my-0 md:h-12 md:w-12 md:text-base">
             VS
           </span>
           <Link
-            className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em] transition hover:text-[var(--text-accent)] md:justify-self-start md:text-3xl"
+            className={`min-w-0 break-words font-display font-black uppercase leading-none tracking-[-0.05em] transition hover:text-[var(--text-accent)] md:justify-self-start ${compact ? "text-lg sm:text-xl md:text-2xl" : "text-xl sm:text-2xl md:text-3xl"}`}
             href={`/team/${series.teamBSlug}`}
           >
             {series.teamB}
@@ -91,12 +126,12 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
 
         {series.results.length > 0 ? (
           <div className="space-y-2">
-            {series.results.map((result) => (
+            {visibleResults.map((result) => (
               <div
                 key={result.order}
-                className="flex flex-wrap items-center justify-between gap-3 bg-[var(--bg-panel)] px-4 py-3.5"
+                className="flex flex-col gap-2 bg-[var(--bg-panel)] px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <span className="font-display text-[0.76rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
                     Map {result.order}
                   </span>
@@ -105,7 +140,7 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
                   </span>
                 </div>
                 <span
-                  className={`font-display text-base font-black uppercase tracking-[0.08em] md:text-lg ${getScoreTone(
+                  className={`font-display text-sm font-black uppercase tracking-[0.08em] sm:text-base md:text-lg ${getScoreTone(
                     series,
                     focusTeamSlug,
                     result.winner,
@@ -115,6 +150,11 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
                 </span>
               </div>
             ))}
+            {compact && series.results.length > visibleResults.length ? (
+              <div className="font-display text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                +{series.results.length - visibleResults.length} more result{series.results.length - visibleResults.length > 1 ? "s" : ""}
+              </div>
+            ) : null}
           </div>
         ) : compact ? null : (
           <div className="status-info">No map results added yet.</div>

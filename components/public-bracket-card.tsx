@@ -9,14 +9,17 @@ interface PublicBracketCardProps {
 
 export function PublicBracketCard({ bracket }: PublicBracketCardProps) {
   return (
-    <article className="bg-[var(--bg-panel-low)] px-5 py-5 md:px-6 md:py-6">
-      <div className="space-y-5">
+    <article className="public-card public-card--bracket px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
+      <div className="public-card-shell">
         <div className="flex flex-wrap items-center gap-3">
           <span className="tactical-chip text-[var(--text-accent)]">
             {bracket.status.replaceAll("_", " ")}
           </span>
           <span className="tactical-chip text-[var(--text-secondary)]">
             {bracket.teamCount} teams
+          </span>
+          <span className="tactical-chip text-[var(--text-secondary)]">
+            {bracket.format}
           </span>
           {bracket.championName ? (
             <span className="tactical-chip text-[var(--success)]">
@@ -26,7 +29,7 @@ export function PublicBracketCard({ bracket }: PublicBracketCardProps) {
         </div>
 
         <div>
-          <h3 className="font-display text-3xl font-black uppercase tracking-[-0.05em]">
+          <h3 className="break-words font-display text-2xl font-black uppercase leading-none tracking-[-0.05em] sm:text-3xl">
             {bracket.title}
           </h3>
           <p className="mt-3 text-sm text-[var(--text-secondary)]">
@@ -35,7 +38,7 @@ export function PublicBracketCard({ bracket }: PublicBracketCardProps) {
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-display text-[0.72rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
             {bracket.rounds[0]?.matches.length ?? 0} opening matches
           </span>

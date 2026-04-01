@@ -1,0 +1,10 @@
+{
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
+  "tailwindCSS.validate": true,
+  "search.exclude": {
+    "**/update/**": true
+  },
+  "files.exclude": {
+    "**/update": true
+  }
+}

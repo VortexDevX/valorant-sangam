@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
+import { createBracketSeriesSummary } from "@/lib/series";
 import type { SeriesCreateInput, SeriesRecord } from "@/types/series";
 
 const initialForm: SeriesCreateInput = {
@@ -35,6 +37,28 @@ function getSeriesStatusLabel(status: SeriesRecord["status"]) {
     default:
       return String(status).replaceAll("_", " ");
   }
+}
+
+function compareSeries(left: SeriesRecord, right: SeriesRecord) {
+  if (left.bracket && right.bracket) {
+    if (left.bracket.title !== right.bracket.title) {
+      return left.bracket.title.localeCompare(right.bracket.title);
+    }
+
+    if (left.bracket.round !== right.bracket.round) {
+      return left.bracket.round - right.bracket.round;
+    }
+
+    if (left.bracket.match !== right.bracket.match) {
+      return left.bracket.match - right.bracket.match;
+    }
+  } else if (left.bracket && !right.bracket) {
+    return -1;
+  } else if (!left.bracket && right.bracket) {
+    return 1;
+  }
+
+  return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
 }
 
 export function AdminSeriesHub() {
@@ -136,24 +160,27 @@ export function AdminSeriesHub() {
     }
   }
 
-  const upcoming = series.filter((entry) => entry.status !== "completed");
-  const completed = series.filter((entry) => entry.status === "completed");
+  const orderedSeries = useMemo(() => [...series].sort(compareSeries), [series]);
+  const upcoming = orderedSeries.filter((entry) => entry.status !== "completed");
+  const completed = orderedSeries.filter((entry) => entry.status === "completed");
 
   return (
     <div className="space-y-8">
+      <StatusToasts
+        error={error}
+        success={message}
+        onErrorDismiss={() => setError(null)}
+        onSuccessDismiss={() => setMessage(null)}
+      />
       <section className="grid gap-6 border-l-4 border-[var(--bg-accent)] pl-6 md:grid-cols-[1fr_auto] md:items-end">
         <div>
           <p className="eyebrow">Series Hub</p>
           <h1 className="page-title">Admin Network</h1>
           <p className="page-subtitle mt-4">
-            Create matchups first. Then open a series workspace to run veto and
-            enter map results.
+            Brackets generate their own series automatically. Manual series still work, but bracket-linked matchups are listed first.
           </p>
         </div>
       </section>
-
-      {message ? <div className="status-success">{message}</div> : null}
-      {error ? <div className="status-error">{error}</div> : null}
 
       <section className="grid gap-8 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <form className="panel px-6 py-6 md:px-8 md:py-8" onSubmit={handleCreate}>
@@ -242,7 +269,7 @@ export function AdminSeriesHub() {
             ) : (
               <div className="space-y-3">
                 {upcoming.map((entry) => (
-                  <article key={entry._id} className="bg-[var(--bg-panel)] px-5 py-5 md:px-6 md:py-6">
+                  <article key={entry._id} className="panel px-5 py-5 md:px-6 md:py-6">
                     <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                       <div className="min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
@@ -252,9 +279,18 @@ export function AdminSeriesHub() {
                           <span className="tactical-chip text-[var(--text-secondary)]">
                             {entry.format}
                           </span>
+                          {entry.bracket ? (
+                            <span className="tactical-chip text-[var(--text-secondary)]">
+                              {createBracketSeriesSummary(entry)}
+                            </span>
+                          ) : (
+                            <span className="tactical-chip text-[var(--text-muted)]">
+                              Manual series
+                            </span>
+                          )}
                         </div>
 
-                        <div className="grid items-center gap-4 bg-[var(--bg-panel-low)] px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
+                        <div className="panel-soft grid items-center gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
                           <div className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em] md:justify-self-end md:text-right md:text-3xl">
                             {entry.teamA}
                           </div>
@@ -278,17 +314,24 @@ export function AdminSeriesHub() {
                       </div>
 
                       <div className="flex flex-wrap gap-3 xl:justify-end">
+                        {entry.bracket ? (
+                          <Link className="button-secondary" href={`/admin/brackets/${entry.bracket.id}`}>
+                            Open Bracket
+                          </Link>
+                        ) : null}
                         <Link className="button-primary" href={`/admin/series/${entry._id}`}>
                           Open Series
                         </Link>
-                        <button
-                          className="button-danger"
-                          disabled={deletingId === entry._id}
-                          onClick={() => handleDelete(entry._id)}
-                          type="button"
-                        >
-                          {deletingId === entry._id ? "Deleting..." : "Delete"}
-                        </button>
+                        {!entry.bracket ? (
+                          <button
+                            className="button-danger"
+                            disabled={deletingId === entry._id}
+                            onClick={() => handleDelete(entry._id)}
+                            type="button"
+                          >
+                            {deletingId === entry._id ? "Deleting..." : "Delete"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </article>
@@ -312,7 +355,7 @@ export function AdminSeriesHub() {
             ) : (
               <div className="space-y-3">
                 {completed.map((entry) => (
-                  <article key={entry._id} className="bg-[var(--bg-panel-low)] px-5 py-5 md:px-6 md:py-6">
+                  <article key={entry._id} className="panel px-5 py-5 md:px-6 md:py-6">
                     <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                       <div className="min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
@@ -322,12 +365,17 @@ export function AdminSeriesHub() {
                           <span className="tactical-chip text-[var(--text-accent)]">
                             {entry.format}
                           </span>
+                          {entry.bracket ? (
+                            <span className="tactical-chip text-[var(--text-secondary)]">
+                              {createBracketSeriesSummary(entry)}
+                            </span>
+                          ) : null}
                           <span className="mono text-sm text-[var(--text-primary)]">
                             {entry.overallScore.teamA}-{entry.overallScore.teamB}
                           </span>
                         </div>
 
-                        <div className="grid items-center gap-4 bg-[var(--bg-panel)] px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
+                        <div className="panel-soft grid items-center gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
                           <div className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em] md:justify-self-end md:text-right md:text-3xl">
                             {entry.teamA}
                           </div>
@@ -344,9 +392,16 @@ export function AdminSeriesHub() {
                         </p>
                       </div>
 
-                      <Link className="button-secondary" href={`/admin/series/${entry._id}`}>
-                        View Series
-                      </Link>
+                      <div className="flex flex-wrap gap-3">
+                        {entry.bracket ? (
+                          <Link className="button-secondary" href={`/admin/brackets/${entry.bracket.id}`}>
+                            Open Bracket
+                          </Link>
+                        ) : null}
+                        <Link className="button-primary" href={`/admin/series/${entry._id}`}>
+                          View Series
+                        </Link>
+                      </div>
                     </div>
                   </article>
                 ))}

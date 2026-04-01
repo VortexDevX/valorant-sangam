@@ -46,12 +46,21 @@ export function AdminSessionLayout({
       <main className="app-shell">
         <header className="tactical-topbar">
           <div className="page-wrap !py-0">
-            <div className="flex min-h-16 items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="tactical-topbar-inner">
+              <div className="tactical-topbar-side tactical-topbar-side--left">
                 <span className="tactical-accent" />
-                <div className="tactical-brand text-xl text-[var(--bg-accent)]">
+                <div className="tactical-brand tactical-topbar-brand">
                   Admin Control
                 </div>
+              </div>
+
+              <div className="tactical-topbar-plate">
+                <span className="tactical-topbar-plate-label">Admin</span>
+              </div>
+
+              <div className="tactical-topbar-side tactical-topbar-side--right">
+                <span className="tactical-accent tactical-accent--small" />
+                <span className="tactical-topbar-meta">Control Panel</span>
               </div>
             </div>
           </div>
@@ -98,20 +107,26 @@ export function AdminSessionLayout({
       <main className="app-shell">
         <header className="tactical-topbar">
           <div className="page-wrap !py-0">
-            <div className="flex min-h-16 items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="tactical-topbar-inner">
+              <div className="tactical-topbar-side tactical-topbar-side--left">
                 <span className="tactical-accent" />
                 <Link
-                  className="tactical-brand text-xl text-[var(--bg-accent)]"
+                  className="tactical-brand tactical-topbar-brand"
                   href="/admin"
                 >
                   Admin Control
                 </Link>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="tactical-topbar-plate">
+                <span className="tactical-topbar-plate-label">
+                  {pathname.startsWith("/admin/brackets") ? "Brackets" : "Dashboard"}
+                </span>
+              </div>
+
+              <div className="tactical-topbar-side tactical-topbar-side--right">
                 <Link
-                  className={`font-display text-[0.66rem] uppercase tracking-[0.18em] ${
+                  className={`tactical-topbar-link ${
                     pathname === "/admin"
                       ? "text-[var(--text-accent)]"
                       : "text-[var(--text-muted)]"
@@ -121,7 +136,7 @@ export function AdminSessionLayout({
                   Dashboard
                 </Link>
                 <Link
-                  className={`font-display text-[0.66rem] uppercase tracking-[0.18em] ${
+                  className={`tactical-topbar-link ${
                     pathname.startsWith("/admin/brackets")
                       ? "text-[var(--text-accent)]"
                       : "text-[var(--text-muted)]"
@@ -131,7 +146,7 @@ export function AdminSessionLayout({
                   Brackets
                 </Link>
                 <button
-                  className="button-secondary"
+                  className="button-secondary tactical-topbar-button"
                   onClick={contextValue.logout}
                   type="button"
                 >

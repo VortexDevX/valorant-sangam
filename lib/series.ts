@@ -185,6 +185,15 @@ export function serializeSeries(series: Record<string, unknown>): SeriesRecord {
     teamB: normalizeTeamName(String(series.teamB)),
     teamASlug: String(series.teamASlug),
     teamBSlug: String(series.teamBSlug),
+    bracket:
+      typeof series.bracket === "object" && series.bracket
+        ? {
+            id: String((series.bracket as Record<string, unknown>).id),
+            title: String((series.bracket as Record<string, unknown>).title),
+            round: Number((series.bracket as Record<string, unknown>).round),
+            match: Number((series.bracket as Record<string, unknown>).match),
+          }
+        : null,
     format,
     veto,
     results,
@@ -215,4 +224,12 @@ export function getNextSeriesMap(series: SeriesRecord) {
   return (
     series.veto.result.maps.find((map) => !filledOrders.has(map.order)) ?? null
   );
+}
+
+export function createBracketSeriesSummary(series: SeriesRecord) {
+  if (!series.bracket) {
+    return null;
+  }
+
+  return `${series.bracket.title} | Round ${series.bracket.round} | Match ${series.bracket.match}`;
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PublicSeriesCard } from "@/components/public-series-card";
+import { StatusToasts } from "@/components/status-toasts";
 import type { TeamPageRecord } from "@/types/series";
 
 export default function TeamPage() {
@@ -41,6 +42,7 @@ export default function TeamPage() {
 
   return (
     <main className="app-shell">
+      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
       <div className="page-wrap space-y-10">
         <section className="space-y-4">
           <Link className="eyebrow" href="/">
@@ -53,7 +55,6 @@ export default function TeamPage() {
           </p>
         </section>
 
-        {error ? <div className="status-error">{error}</div> : null}
         {loading ? (
           <div className="status-info">Loading team page...</div>
         ) : !team ? (
@@ -72,7 +73,7 @@ export default function TeamPage() {
               {upcoming.length === 0 ? (
                 <div className="empty-state">No upcoming series for this team.</div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {upcoming.map((entry) => (
                     <PublicSeriesCard
                       key={entry._id}
@@ -97,7 +98,7 @@ export default function TeamPage() {
               {completed.length === 0 ? (
                 <div className="empty-state">No completed series for this team.</div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {completed.map((entry) => (
                     <PublicSeriesCard
                       key={entry._id}

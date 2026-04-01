@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { BracketBoard } from "@/components/bracket-board";
+import { StatusToasts } from "@/components/status-toasts";
 import type { BracketRecord } from "@/types/bracket";
 
 export default function BracketPage() {
@@ -38,6 +39,7 @@ export default function BracketPage() {
 
   return (
     <main className="app-shell">
+      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
       <div className="page-wrap space-y-10">
         <section className="space-y-4">
           <Link className="eyebrow" href="/">
@@ -49,7 +51,6 @@ export default function BracketPage() {
           </p>
         </section>
 
-        {error ? <div className="status-error">{error}</div> : null}
         {loading ? (
           <div className="status-info">Loading bracket...</div>
         ) : !bracket ? (

@@ -63,6 +63,21 @@ export async function DELETE(
     }
 
     const db = await getDb();
+    const existing = await db.collection("series").findOne({ _id: objectId });
+
+    if (!existing) {
+      return Response.json({ error: "Series not found." }, { status: 404 });
+    }
+
+    const serialized = serializeSeries(existing as Record<string, unknown>);
+
+    if (serialized.bracket) {
+      return Response.json(
+        { error: "Bracket-generated series cannot be deleted directly." },
+        { status: 409 },
+      );
+    }
+
     const result = await db.collection("series").deleteOne({ _id: objectId });
 
     if (!result.deletedCount) {

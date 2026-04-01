@@ -1,4 +1,8 @@
 import { ObjectId } from "mongodb";
+import {
+  BracketSeriesConflictError,
+  syncBracketSeriesById,
+} from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
@@ -95,11 +99,19 @@ export async function POST(
     }
 
     const updated = await db.collection("series").findOne({ _id: objectId });
+    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+
+    if (serializedUpdated.bracket) {
+      await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
+    }
 
     return Response.json({
-      series: serializeSeries(updated as Record<string, unknown>),
+      series: serializedUpdated,
     });
   } catch (error) {
+    if (error instanceof BracketSeriesConflictError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
     logApiError("POST /api/series/[id]/results", error);
     return Response.json({ error: "Failed to add result." }, { status: 500 });
   }

@@ -46,6 +46,13 @@ export interface SeriesOverallScore {
   completed: boolean;
 }
 
+export interface SeriesBracketLink {
+  id: string;
+  title: string;
+  round: number;
+  match: number;
+}
+
 export interface SeriesRecord {
   _id: string;
   pairKey: string;
@@ -53,6 +60,7 @@ export interface SeriesRecord {
   teamB: string;
   teamASlug: string;
   teamBSlug: string;
+  bracket: SeriesBracketLink | null;
   format: SeriesFormat;
   status: SeriesStatus;
   veto: SeriesVetoState | null;

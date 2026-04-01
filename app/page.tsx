@@ -2,43 +2,65 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { PublicBracketCard } from "@/components/public-bracket-card";
+import { PublicUpcomingMatchCard } from "@/components/public-upcoming-match-card";
+import { getNextSeriesMap } from "@/lib/series";
+import type { BracketRecord } from "@/types/bracket";
 import { PublicSeriesCard } from "@/components/public-series-card";
 import type { SeriesRecord } from "@/types/series";
 
 export default function Home() {
   const [series, setSeries] = useState<SeriesRecord[]>([]);
+  const [brackets, setBrackets] = useState<BracketRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadMatches = async () => {
+    const loadHome = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/series", { cache: "no-store" });
-        const payload = await response.json();
+        const [seriesResponse, bracketsResponse] = await Promise.all([
+          fetch("/api/series", { cache: "no-store" }),
+          fetch("/api/brackets", { cache: "no-store" }),
+        ]);
+        const [seriesPayload, bracketsPayload] = await Promise.all([
+          seriesResponse.json(),
+          bracketsResponse.json(),
+        ]);
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Failed to load series.");
+        if (!seriesResponse.ok) {
+          throw new Error(seriesPayload.error ?? "Failed to load series.");
         }
 
-        setSeries(payload.series);
+        if (!bracketsResponse.ok) {
+          throw new Error(bracketsPayload.error ?? "Failed to load brackets.");
+        }
+
+        setSeries(seriesPayload.series);
+        setBrackets(bracketsPayload.brackets);
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "Failed to load series.",
+            : "Failed to load home page.",
         );
       } finally {
         setLoading(false);
       }
     };
 
-    void loadMatches();
+    void loadHome();
   }, []);
 
   const upcoming = series.filter((entry) => entry.status !== "completed");
+  const upcomingMatches = upcoming
+    .map((entry) => ({ series: entry, mapSlot: getNextSeriesMap(entry) }))
+    .filter(
+      (entry): entry is { series: SeriesRecord; mapSlot: NonNullable<ReturnType<typeof getNextSeriesMap>> } =>
+        entry.mapSlot !== null,
+    );
 
   return (
     <main className="app-shell">
@@ -123,15 +145,39 @@ export default function Home() {
                     Upcoming Matches
                   </h3>
                   <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {upcoming.length} open
+                    {upcomingMatches.length} ready
                   </span>
                 </div>
-                {upcoming.length === 0 ? (
-                  <div className="empty-state">No upcoming matches right now.</div>
+                {upcomingMatches.length === 0 ? (
+                  <div className="empty-state">No upcoming matches are ready yet.</div>
                 ) : (
                   <div className="space-y-4">
-                    {upcoming.map((entry) => (
-                      <PublicSeriesCard key={entry._id} series={entry} />
+                    {upcomingMatches.map((entry) => (
+                      <PublicUpcomingMatchCard
+                        key={`${entry.series._id}-${entry.mapSlot.order}`}
+                        mapSlot={entry.mapSlot}
+                        series={entry.series}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-end justify-between gap-4">
+                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                    Brackets
+                  </h3>
+                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {brackets.length} total
+                  </span>
+                </div>
+                {brackets.length === 0 ? (
+                  <div className="empty-state">No brackets added yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {brackets.map((bracket) => (
+                      <PublicBracketCard key={bracket._id} bracket={bracket} />
                     ))}
                   </div>
                 )}

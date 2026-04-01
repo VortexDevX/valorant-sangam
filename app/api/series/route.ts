@@ -1,7 +1,7 @@
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
-import { buildPairKey, serializeSeries, slugifyTeamName } from "@/lib/series";
+import { buildPairKey, normalizeTeamName, serializeSeries, slugifyTeamName } from "@/lib/series";
 import { seriesCreateSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
@@ -42,8 +42,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const teamASlug = slugifyTeamName(parsed.data.teamA);
-    const teamBSlug = slugifyTeamName(parsed.data.teamB);
+    const teamA = normalizeTeamName(parsed.data.teamA);
+    const teamB = normalizeTeamName(parsed.data.teamB);
+    const teamASlug = slugifyTeamName(teamA);
+    const teamBSlug = slugifyTeamName(teamB);
     const pairKey = buildPairKey(teamASlug, teamBSlug);
     const now = new Date();
     const db = await getDb();
@@ -61,8 +63,8 @@ export async function POST(request: Request) {
 
     const result = await db.collection("series").insertOne({
       pairKey,
-      teamA: parsed.data.teamA.trim(),
-      teamB: parsed.data.teamB.trim(),
+      teamA,
+      teamB,
       teamASlug,
       teamBSlug,
       format: parsed.data.format,

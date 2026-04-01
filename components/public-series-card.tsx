@@ -64,7 +64,7 @@ export function PublicSeriesCard({ series, compact = false, focusTeamSlug }: Pub
           >
             {series.teamA}
           </Link>
-          <span className="flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-white/10 bg-[var(--bg-panel-high)] font-display text-sm font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] md:h-12 md:w-12 md:text-base">
+          <span className="flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-white/8 bg-[var(--bg-panel-lowest)] font-display text-sm font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] md:h-12 md:w-12 md:text-base">
             VS
           </span>
           <Link

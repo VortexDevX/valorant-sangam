@@ -118,7 +118,17 @@ export function AdminSessionLayout({
                   }`}
                   href="/admin"
                 >
-                  Series Hub
+                  Dashboard
+                </Link>
+                <Link
+                  className={`font-display text-[0.66rem] uppercase tracking-[0.18em] ${
+                    pathname.startsWith("/admin/brackets")
+                      ? "text-[var(--text-accent)]"
+                      : "text-[var(--text-muted)]"
+                  }`}
+                  href="/admin/brackets"
+                >
+                  Brackets
                 </Link>
                 <button
                   className="button-secondary"

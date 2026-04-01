@@ -3,6 +3,10 @@ import type { MapId } from "@/lib/map-pool";
 import type { SeriesRecord, SeriesResultRecord, SeriesStatus, SeriesVetoState } from "@/types/series";
 import type { SeriesFormat, TeamSlot, VetoActionRecord, VetoResultMap } from "@/types/veto";
 
+export function normalizeTeamName(value: string) {
+  return value.trim().toUpperCase();
+}
+
 export function slugifyTeamName(value: string) {
   return value
     .trim()
@@ -177,8 +181,8 @@ export function serializeSeries(series: Record<string, unknown>): SeriesRecord {
   return {
     _id: String(series._id),
     pairKey: String(series.pairKey),
-    teamA: String(series.teamA),
-    teamB: String(series.teamB),
+    teamA: normalizeTeamName(String(series.teamA)),
+    teamB: normalizeTeamName(String(series.teamB)),
     teamASlug: String(series.teamASlug),
     teamBSlug: String(series.teamBSlug),
     format,

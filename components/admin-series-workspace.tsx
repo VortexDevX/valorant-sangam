@@ -122,7 +122,7 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
     }
   }
 
-  async function applyVetoAction(action: { map?: MapId; side?: StartingSide }) {
+  async function applyVetoAction(action: { map?: MapId; side?: StartingSide; undo?: boolean }) {
     if (!series) {
       return;
     }
@@ -147,7 +147,11 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
       }
 
       setSeries(payload.series);
-      setMessage(payload.series.veto?.status === "completed" ? "Veto complete." : "Veto step saved.");
+      if (action.undo) {
+        setMessage("Last veto action removed.");
+      } else {
+        setMessage(payload.series.veto?.status === "completed" ? "Veto complete." : "Veto step saved.");
+      }
     } catch (applyError) {
       setError(applyError instanceof Error ? applyError.message : "Failed to update veto.");
     } finally {

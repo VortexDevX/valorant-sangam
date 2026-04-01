@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BracketBoard } from "@/components/bracket-board";
 import { useAdminSession } from "@/components/admin-session";
-import { computeBracketView, normalizeBracketTeams } from "@/lib/brackets";
+import { buildSeedOrder, computeBracketView, normalizeBracketTeams } from "@/lib/brackets";
 import type { BracketRecord } from "@/types/bracket";
 
 interface AdminBracketWorkspaceProps {
@@ -77,6 +77,36 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
   const setupComplete =
     previewBracket !== null &&
     teams.filter((entry) => entry.trim().length > 0).length === previewBracket.teamCount;
+  const firstRoundMatchups = useMemo(() => {
+    if (!previewBracket) {
+      return [];
+    }
+
+    const slotSeeds = buildSeedOrder(previewBracket.bracketSize);
+    const pairs: Array<
+      Array<{ seed: number | null; value: string; isBye: boolean }>
+    > = [];
+
+    for (let index = 0; index < slotSeeds.length; index += 2) {
+      const topSeed = slotSeeds[index];
+      const bottomSeed = slotSeeds[index + 1];
+
+      pairs.push([
+        {
+          seed: topSeed <= previewBracket.teamCount ? topSeed : null,
+          value: topSeed <= previewBracket.teamCount ? teams[topSeed - 1] ?? "" : "BYE",
+          isBye: topSeed > previewBracket.teamCount,
+        },
+        {
+          seed: bottomSeed <= previewBracket.teamCount ? bottomSeed : null,
+          value: bottomSeed <= previewBracket.teamCount ? teams[bottomSeed - 1] ?? "" : "BYE",
+          isBye: bottomSeed > previewBracket.teamCount,
+        },
+      ]);
+    }
+
+    return pairs;
+  }, [previewBracket, teams]);
 
   async function saveDetails(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -166,7 +196,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           <div>
             <h1 className="page-title">{previewBracket.title}</h1>
             <p className="page-subtitle mt-4">
-              Enter team names directly in the first round, save once, then advance winners through the bracket.
+              Fill teams in the same order as the first-round bracket shown below. BYE slots stay automatic.
             </p>
           </div>
 
@@ -198,7 +228,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
                 {previewBracket.title}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-                Bracket is generated automatically. Fill the first round directly on the board.
+                Team entry mirrors the real round-one bracket order. Protected seeds still keep their BYE slots.
               </p>
             </div>
 
@@ -240,11 +270,62 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           </div>
         </section>
 
+        <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="eyebrow">Teams</p>
+              <h3 className="mt-2 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                Round 1 Matchups
+              </h3>
+            </div>
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              {previewBracket.rounds[0]?.matches.length ?? 0} matches
+            </span>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {firstRoundMatchups.map((pair, matchIndex) => (
+              <div key={`round-1-match-${matchIndex + 1}`} className="panel-soft space-y-3 px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="eyebrow">Match {matchIndex + 1}</span>
+                  <span className="tactical-chip text-[var(--text-muted)]">Round 1</span>
+                </div>
+
+                {pair.map((slot, slotIndex) =>
+                  slot.isBye ? (
+                    <div key={`match-${matchIndex + 1}-slot-${slotIndex + 1}`}>
+                      <div className="label">Slot {slotIndex === 0 ? "A" : "B"}</div>
+                      <div className="field border border-[rgba(255,179,178,0.1)] text-[var(--text-muted)]">
+                        BYE
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={`match-${matchIndex + 1}-seed-${slot.seed}`}>
+                      <label className="label" htmlFor={`match-${matchIndex + 1}-seed-${slot.seed}`}>
+                        Slot {slotIndex === 0 ? "A" : "B"} | Seed {slot.seed}
+                      </label>
+                      <div className="tactical-input-wrap">
+                        <input
+                          id={`match-${matchIndex + 1}-seed-${slot.seed}`}
+                          className="field"
+                          disabled={busy}
+                          placeholder={`TEAM ${slot.seed}`}
+                          value={slot.value}
+                          onChange={(event) => updateTeamName(slot.seed!, event.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         <BracketBoard
           bracket={previewBracket}
           busy={busy}
           editable={!hasUnsavedChanges && setupComplete}
-          onEditTeamName={updateTeamName}
           onPickWinner={!hasUnsavedChanges && setupComplete ? pickWinner : undefined}
         />
       </form>

@@ -55,11 +55,21 @@ export async function PATCH(
     }
 
     const db = await getDb();
+    const existingSeries = await db.collection("series").findOne({ _id: resolved.objectId });
+
+    if (!existingSeries) {
+      return Response.json({ error: "Series not found." }, { status: 404 });
+    }
+
+    const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+    const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
+
+    if (!existingResult) {
+      return Response.json({ error: "Result not found." }, { status: 404 });
+    }
+
     await db.collection("series").updateOne(
-      {
-        _id: resolved.objectId,
-        "results.order": resolved.orderNumber,
-      },
+      { _id: resolved.objectId, "results.order": resolved.orderNumber },
       {
         $set: {
           "results.$.score": normalizeScore(parsed.data.score),
@@ -73,10 +83,6 @@ export async function PATCH(
     );
 
     const updated = await db.collection("series").findOne({ _id: resolved.objectId });
-
-    if (!updated) {
-      return Response.json({ error: "Series not found." }, { status: 404 });
-    }
 
     return Response.json({
       series: serializeSeries(updated as Record<string, unknown>),
@@ -104,6 +110,19 @@ export async function DELETE(
     }
 
     const db = await getDb();
+    const existingSeries = await db.collection("series").findOne({ _id: resolved.objectId });
+
+    if (!existingSeries) {
+      return Response.json({ error: "Series not found." }, { status: 404 });
+    }
+
+    const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+    const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
+
+    if (!existingResult) {
+      return Response.json({ error: "Result not found." }, { status: 404 });
+    }
+
     await db.collection("series").updateOne(
       { _id: resolved.objectId },
       {
@@ -116,10 +135,6 @@ export async function DELETE(
     );
 
     const updated = await db.collection("series").findOne({ _id: resolved.objectId });
-
-    if (!updated) {
-      return Response.json({ error: "Series not found." }, { status: 404 });
-    }
 
     return Response.json({
       series: serializeSeries(updated as Record<string, unknown>),

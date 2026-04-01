@@ -1,6 +1,45 @@
 import { z } from "zod";
 import { MAP_POOL } from "@/lib/map-pool";
 
+export function normalizeScore(score: string) {
+  return score.replace(/\s+/g, "").trim();
+}
+
+function parseScoreParts(score: string) {
+  const [left, right] = normalizeScore(score).split("-");
+  const teamA = Number(left);
+  const teamB = Number(right);
+
+  if (!Number.isInteger(teamA) || !Number.isInteger(teamB)) {
+    return null;
+  }
+
+  return { teamA, teamB };
+}
+
+export function isValidValorantScore(score: string) {
+  const parsed = parseScoreParts(score);
+
+  if (!parsed) {
+    return false;
+  }
+
+  const { teamA, teamB } = parsed;
+
+  if (teamA < 0 || teamB < 0 || teamA === teamB) {
+    return false;
+  }
+
+  const winner = Math.max(teamA, teamB);
+  const loser = Math.min(teamA, teamB);
+
+  if (winner === 13) {
+    return loser <= 11;
+  }
+
+  return winner >= 14 && winner - loser === 2;
+}
+
 export const loginSchema = z.object({
   username: z.string().trim().min(1, "Username is required."),
   password: z.string().min(1, "Password is required."),
@@ -14,7 +53,10 @@ export const matchSchema = z
     score: z
       .string()
       .trim()
-      .regex(/^\d{1,2}\s*-\s*\d{1,2}$/, "Score must look like 13-11."),
+      .regex(/^\d{1,2}\s*-\s*\d{1,2}$/, "Score must look like 13-11.")
+      .refine(isValidValorantScore, {
+        message: "Enter a valid Valorant final score.",
+      }),
     note: z.string().trim().max(240, "Note is too long.").optional().or(z.literal("")),
   })
   .refine((value) => value.teamA.toLowerCase() !== value.teamB.toLowerCase(), {
@@ -69,7 +111,10 @@ export const seriesResultSchema = z.object({
   score: z
     .string()
     .trim()
-    .regex(/^\d{1,2}\s*-\s*\d{1,2}$/, "Score must look like 13-11."),
+    .regex(/^\d{1,2}\s*-\s*\d{1,2}$/, "Score must look like 13-11.")
+    .refine(isValidValorantScore, {
+      message: "Enter a valid Valorant final score.",
+    }),
   note: z.string().trim().max(240, "Note is too long.").optional().or(z.literal("")),
 });
 
@@ -103,7 +148,3 @@ export const bracketUpdateSchema = z.object({
 export const bracketWinnerSchema = z.object({
   winnerSeed: z.number().int().positive().nullable(),
 });
-
-export function normalizeScore(score: string) {
-  return score.replace(/\s+/g, "").trim();
-}

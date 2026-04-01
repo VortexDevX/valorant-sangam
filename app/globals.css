@@ -290,6 +290,51 @@ img {
   background: var(--bg-accent);
 }
 
+.bracket-engine-frame {
+  overflow: hidden;
+  border: 1px solid rgba(255, 179, 178, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(255, 70, 85, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 24%),
+    var(--bg-panel-lowest);
+}
+
+.bracket-engine-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem 1.4rem 1rem;
+  border-bottom: 1px solid rgba(255, 179, 178, 0.1);
+}
+
+.bracket-engine-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1.25rem 1rem 1rem;
+}
+
+.bracket-engine-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.bracket-engine-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bracket-engine-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 70, 85, 0.38);
+}
+
+.bracket-engine-empty {
+  margin: 1rem;
+  border: 1px solid rgba(255, 179, 178, 0.12);
+  background: rgba(18, 28, 39, 0.88);
+  padding: 2rem;
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .page-wrap {
     width: min(100%, calc(100% - 1rem));

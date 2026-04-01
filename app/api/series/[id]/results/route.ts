@@ -73,8 +73,11 @@ export async function POST(
       updatedAt: now,
     };
 
-    await db.collection("series").updateOne(
-      { _id: objectId },
+    const writeResult = await db.collection("series").updateOne(
+      {
+        _id: objectId,
+        "results.order": { $ne: nextMap.order },
+      },
       {
         $push: { results: nextResult },
         $set: {
@@ -83,6 +86,13 @@ export async function POST(
         },
       } as never,
     );
+
+    if (!writeResult.modifiedCount) {
+      return Response.json(
+        { error: "That result slot was already filled. Reload and try again." },
+        { status: 409 },
+      );
+    }
 
     const updated = await db.collection("series").findOne({ _id: objectId });
 

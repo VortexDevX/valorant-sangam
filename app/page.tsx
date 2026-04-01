@@ -166,26 +166,6 @@ export default function Home() {
               <section className="space-y-4">
                 <div className="flex items-end justify-between gap-4">
                   <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                    Brackets
-                  </h3>
-                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {brackets.length} total
-                  </span>
-                </div>
-                {brackets.length === 0 ? (
-                  <div className="empty-state">No brackets added yet.</div>
-                ) : (
-                  <div className="space-y-4">
-                    {brackets.map((bracket) => (
-                      <PublicBracketCard key={bracket._id} bracket={bracket} />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-end justify-between gap-4">
-                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
                     Series
                   </h3>
                   <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -198,6 +178,26 @@ export default function Home() {
                   <div className="space-y-4">
                     {series.map((entry) => (
                       <PublicSeriesCard key={entry._id} series={entry} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-end justify-between gap-4">
+                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                    Brackets
+                  </h3>
+                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {brackets.length} total
+                  </span>
+                </div>
+                {brackets.length === 0 ? (
+                  <div className="empty-state">No brackets added yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {brackets.map((bracket) => (
+                      <PublicBracketCard key={bracket._id} bracket={bracket} />
                     ))}
                   </div>
                 )}

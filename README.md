@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Valorant Sangam
 
-## Getting Started
+Valorant Sangam is a Next.js tournament control app for running small Valorant events. It currently covers:
 
-First, run the development server:
+- public tournament home with series, upcoming maps, team pages, and brackets
+- admin login with short-lived in-memory access
+- series creation
+- series-integrated map veto flow
+- ordered map result entry with Valorant score validation
+- single-elimination bracket management
+
+## Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- MongoDB
+- Zod
+- Tailwind CSS v4
+
+## Current Architecture
+
+### Public routes
+
+- `/`
+  Shows all series, upcoming played-next maps, and brackets.
+- `/team/[slug]`
+  Shows all series for a given team.
+- `/brackets/[id]`
+  Shows the public bracket view.
+
+### Admin routes
+
+- `/admin`
+  Main admin hub for series.
+- `/admin/series/[id]`
+  Series workspace for map pool setup, veto actions, and result entry.
+- `/admin/brackets`
+  Bracket hub.
+- `/admin/brackets/[id]`
+  Bracket workspace for seeding and winner advancement.
+
+### API routes
+
+- `POST /api/admin/login`
+- `GET, POST /api/series`
+- `GET, DELETE /api/series/[id]`
+- `POST, PATCH /api/series/[id]/veto`
+- `POST /api/series/[id]/results`
+- `PATCH, DELETE /api/series/[id]/results/[order]`
+- `GET /api/team/[slug]`
+- `GET, POST /api/brackets`
+- `GET, PATCH, DELETE /api/brackets/[id]`
+- `PATCH /api/brackets/[id]/matches/[round]/[match]`
+- `GET /api/health`
+
+## Brackets
+
+Brackets are single elimination and use two layers:
+
+- `lib/brackets.ts` computes bracket state from `teams` plus winner selections
+- `@g-loot/react-tournament-brackets` handles the visual layout engine
+
+This keeps progression logic separate from rendering math.
+
+## Valorant Score Rules
+
+The app accepts only valid final Valorant map scores:
+
+- regulation: `13-0` through `13-11`
+- overtime: `14-12`, `15-13`, `16-14`, and so on
+
+It rejects ties and impossible endings like `13-12`, `12-10`, or `0-0`.
+
+## Environment Variables
+
+Create `.env.local` or `.env` with:
+
+```env
+MONGODB_URI=
+MONGODB_DB_NAME=
+AUTH_JWT_SECRET=
+```
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run checks:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Admin Setup
 
-## Learn More
+Seed the admin user:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run seed:admin
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The admin token is returned by the login route and kept only in client memory. Refreshing the admin page logs the operator out.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Data Model Notes
 
-## Deploy on Vercel
+### Series
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A series stores:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `teamA`, `teamB`
+- team slugs and `pairKey`
+- `format`
+- integrated veto state
+- ordered results
+
+`pairKey` is retained for grouping and lookups, but it is no longer treated as globally unique. Rematches are allowed.
+
+### Brackets
+
+A bracket stores:
+
+- title
+- team count and bracket size
+- seeded team list
+- winner selections
+
+The round tree is derived on read instead of being stored as mutable nested match documents.
+
+## Cleanup Status
+
+Legacy standalone match-history and veto-session routes were removed. The app now uses the series workspace as the single source of truth for veto and results.

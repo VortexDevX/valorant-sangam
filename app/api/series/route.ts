@@ -50,17 +50,6 @@ export async function POST(request: Request) {
     const now = new Date();
     const db = await getDb();
 
-    await db.collection("series").createIndex({ pairKey: 1 }, { unique: true });
-
-    const existingSeries = await db.collection("series").findOne({ pairKey });
-
-    if (existingSeries) {
-      return Response.json(
-        { error: "This matchup already exists." },
-        { status: 409 },
-      );
-    }
-
     const result = await db.collection("series").insertOne({
       pairKey,
       teamA,

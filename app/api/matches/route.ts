@@ -1,7 +1,10 @@
 import { getAuthorizedAdmin } from "@/lib/auth";
+import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
 import { matchSchema, normalizeScore } from "@/lib/validators";
 import type { MatchRecord } from "@/types/match";
+
+export const runtime = "nodejs";
 
 function serializeMatch(match: Record<string, unknown>): MatchRecord {
   return {
@@ -34,7 +37,8 @@ export async function GET() {
     return Response.json({
       matches: matches.map((match) => serializeMatch(match as Record<string, unknown>)),
     });
-  } catch {
+  } catch (error) {
+    logApiError("GET /api/matches", error);
     return Response.json({ error: "Failed to load matches." }, { status: 500 });
   }
 }
@@ -80,7 +84,8 @@ export async function POST(request: Request) {
       { match: serializeMatch(createdMatch as Record<string, unknown>) },
       { status: 201 },
     );
-  } catch {
+  } catch (error) {
+    logApiError("POST /api/matches", error);
     return Response.json({ error: "Failed to create match." }, { status: 500 });
   }
 }

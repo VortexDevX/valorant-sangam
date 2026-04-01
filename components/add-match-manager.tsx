@@ -126,12 +126,16 @@ export function AddMatchManager({ authToken }: AddMatchManagerProps) {
     }
   }
 
+  const uniqueMaps = new Set(matches.map((match) => match.map)).size;
+  const latestRecord = matches[0];
+
   return (
     <div className="space-y-6">
       {message ? <div className="status-success">{message}</div> : null}
       {error ? <div className="status-error">{error}</div> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <section className="space-y-8">
         <AddMatchForm
           key={editingMatch?._id ?? "new-match"}
           initialMatch={editingMatch}
@@ -140,25 +144,117 @@ export function AddMatchManager({ authToken }: AddMatchManagerProps) {
           submitting={saving}
         />
 
-        <section className="space-y-4">
-          <div className="panel px-5 py-5">
-            <p className="eyebrow">Stored Results</p>
-            <h2 className="mt-2 text-2xl font-bold uppercase tracking-[-0.04em]">
-              Match Control
-            </h2>
-          </div>
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="font-display text-2xl font-bold uppercase tracking-[-0.05em]">
+                Deployed Match Records
+              </h2>
+              <span className="font-display text-[0.62rem] uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                Total Records: {matches.length.toString().padStart(3, "0")}
+              </span>
+            </div>
 
-          {loading ? (
-            <div className="status-info">Loading stored matches...</div>
-          ) : (
-            <MatchHistoryList
-              deletingId={deletingId}
-              matches={matches}
-              onDelete={handleDelete}
-              onEdit={setEditingMatch}
-            />
-          )}
+            {loading ? (
+              <div className="status-info">Loading stored matches...</div>
+            ) : (
+              <MatchHistoryList
+                deletingId={deletingId}
+                matches={matches}
+                onDelete={handleDelete}
+                onEdit={setEditingMatch}
+              />
+            )}
+          </section>
         </section>
+
+        <aside className="space-y-6">
+          <section className="bg-[var(--bg-panel-lowest)] px-6 py-6">
+            <h3 className="font-display text-sm font-bold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+              System Diagnostics
+            </h3>
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Database Status
+                </span>
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--success)]">
+                  Operational
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Stored Records
+                </span>
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-accent)]">
+                  {matches.length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Active Maps Logged
+                </span>
+                <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-accent)]">
+                  {uniqueMaps}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel px-6 py-6">
+            <h3 className="font-display text-sm font-bold uppercase tracking-[0.22em]">
+              Record Snapshot
+            </h3>
+            <div className="mt-6 space-y-5">
+              <div>
+                <div className="mb-2 flex justify-between">
+                  <span className="font-display text-[0.62rem] uppercase tracking-[0.18em]">
+                    Match Archive
+                  </span>
+                  <span className="font-display text-[0.62rem] uppercase tracking-[0.18em]">
+                    {matches.length}
+                  </span>
+                </div>
+                <div className="h-1 bg-[var(--bg-panel-highest)]">
+                  <div
+                    className="h-full bg-[var(--bg-accent)]"
+                    style={{ width: `${Math.min(matches.length * 12, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 flex justify-between">
+                  <span className="font-display text-[0.62rem] uppercase tracking-[0.18em]">
+                    Map Coverage
+                  </span>
+                  <span className="font-display text-[0.62rem] uppercase tracking-[0.18em]">
+                    {uniqueMaps}/12
+                  </span>
+                </div>
+                <div className="h-1 bg-[var(--bg-panel-highest)]">
+                  <div
+                    className="h-full bg-[var(--success)]"
+                    style={{ width: `${(uniqueMaps / 12) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="relative h-56 overflow-hidden bg-[var(--bg-panel-lowest)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,70,85,0.15),_transparent_55%)]" />
+            <div className="absolute inset-x-0 bottom-0 p-6">
+              <div className="font-display text-[0.62rem] font-black uppercase tracking-[0.28em] text-[var(--bg-accent)]">
+                Protocol: Match Control
+              </div>
+              <div className="mt-2 font-display text-[0.62rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {latestRecord
+                  ? `Latest update: ${latestRecord.teamA} vs ${latestRecord.teamB}`
+                  : "Waiting for first record"}
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
   );

@@ -1,9 +1,12 @@
 import { getAuthorizedAdmin } from "@/lib/auth";
+import { logApiError } from "@/lib/api-errors";
 import { MAP_POOL, isMapId, type MapId } from "@/lib/map-pool";
 import { getDb } from "@/lib/mongodb";
 import { deriveVetoState } from "@/lib/veto-engine";
 import { vetoSessionSchema } from "@/lib/validators";
 import type { SeriesFormat, VetoSessionRecord } from "@/types/veto";
+
+export const runtime = "nodejs";
 
 function serializeVetoSession(
   session: Record<string, unknown>,
@@ -112,7 +115,8 @@ export async function POST(request: Request) {
       },
       derived,
     });
-  } catch {
+  } catch (error) {
+    logApiError("POST /api/veto", error);
     return Response.json({ error: "Failed to create veto session." }, { status: 500 });
   }
 }

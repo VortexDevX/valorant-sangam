@@ -51,27 +51,33 @@ export function AdminLoginForm({ onAuthenticated }: AdminLoginFormProps) {
         <label className="label" htmlFor="username">
           Username
         </label>
-        <input
-          id="username"
-          className="field"
-          autoComplete="off"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-        />
+        <div className="tactical-input-wrap">
+          <input
+            id="username"
+            className="field"
+            autoComplete="off"
+            placeholder="ADMIN HANDLE"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </div>
       </div>
 
       <div>
         <label className="label" htmlFor="password">
           Password
         </label>
-        <input
-          id="password"
-          className="field"
-          type="password"
-          autoComplete="off"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        <div className="tactical-input-wrap">
+          <input
+            id="password"
+            className="field"
+            type="password"
+            autoComplete="off"
+            placeholder="ACCESS KEY"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </div>
       </div>
 
       {error ? <div className="status-error">{error}</div> : null}

@@ -1,5 +1,8 @@
 import { createAdminToken, verifyPassword } from "@/lib/auth";
+import { logApiError } from "@/lib/api-errors";
 import { loginSchema } from "@/lib/validators";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +29,8 @@ export async function POST(request: Request) {
     const token = await createAdminToken(username);
 
     return Response.json({ token });
-  } catch {
+  } catch (error) {
+    logApiError("POST /api/admin/login", error);
     return Response.json({ error: "Failed to process login." }, { status: 500 });
   }
 }

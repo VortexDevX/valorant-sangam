@@ -1,8 +1,11 @@
 import { ObjectId } from "mongodb";
 import { getAuthorizedAdmin } from "@/lib/auth";
+import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
 import { matchSchema, normalizeScore } from "@/lib/validators";
 import type { MatchRecord } from "@/types/match";
+
+export const runtime = "nodejs";
 
 function serializeMatch(match: Record<string, unknown>): MatchRecord {
   return {
@@ -84,7 +87,8 @@ export async function PATCH(
     return Response.json({
       match: serializeMatch(updateResult as Record<string, unknown>),
     });
-  } catch {
+  } catch (error) {
+    logApiError("PATCH /api/matches/[id]", error);
     return Response.json({ error: "Failed to update match." }, { status: 500 });
   }
 }
@@ -114,7 +118,8 @@ export async function DELETE(
     }
 
     return Response.json({ success: true, deletedBy: admin });
-  } catch {
+  } catch (error) {
+    logApiError("DELETE /api/matches/[id]", error);
     return Response.json({ error: "Failed to delete match." }, { status: 500 });
   }
 }

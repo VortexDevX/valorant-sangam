@@ -115,14 +115,29 @@ export function MapSelectManager({ authToken }: MapSelectManagerProps) {
       {error ? <div className="status-error">{error}</div> : null}
 
       {payload ? (
-        <VetoBoard
-          busy={busy}
-          derived={payload.derived}
-          onApply={applyAction}
-          session={payload.session}
-        />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              className="button-secondary"
+              onClick={() => {
+                setPayload(null);
+                setMessage(null);
+                setError(null);
+              }}
+              type="button"
+            >
+              New Session
+            </button>
+          </div>
+          <VetoBoard
+            busy={busy}
+            derived={payload.derived}
+            onApply={applyAction}
+            session={payload.session}
+          />
+        </div>
       ) : (
-        <div className="max-w-md">
+        <div className="mx-auto w-full max-w-6xl">
           <VetoSetupForm disabled={busy} onSubmit={startVeto} />
         </div>
       )}

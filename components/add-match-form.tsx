@@ -54,11 +54,14 @@ export function AddMatchForm({
   }
 
   return (
-    <form className="panel space-y-5 px-5 py-5" onSubmit={handleSubmit}>
+    <form className="panel relative overflow-hidden px-6 py-6 md:px-8 md:py-8" onSubmit={handleSubmit}>
+      <div className="absolute -right-8 -top-8 h-20 w-20 rotate-45 bg-[var(--bg-accent-soft)]" />
+      <div className="absolute bottom-0 left-0 h-12 w-1 bg-[var(--bg-accent)]" />
+
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="eyebrow">Match Entry</p>
-          <h2 className="mt-2 text-2xl font-bold uppercase tracking-[-0.04em]">
+          <h2 className="mt-2 font-display text-2xl font-bold uppercase tracking-[0.08em]">
             {initialMatch ? "Edit Match" : "Add Match"}
           </h2>
         </div>
@@ -74,34 +77,40 @@ export function AddMatchForm({
         ) : null}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
         <div>
           <label className="label" htmlFor="team-a">
-            Team A
+            Team Alpha
           </label>
-          <input
-            id="team-a"
-            className="field"
-            value={formValue.teamA}
-            onChange={(event) => updateField("teamA", event.target.value)}
-          />
+          <div className="tactical-input-wrap">
+            <input
+              id="team-a"
+              className="field"
+              placeholder="ENTER TEAM NAME"
+              value={formValue.teamA}
+              onChange={(event) => updateField("teamA", event.target.value)}
+            />
+          </div>
         </div>
 
         <div>
           <label className="label" htmlFor="team-b">
-            Team B
+            Team Bravo
           </label>
-          <input
-            id="team-b"
-            className="field"
-            value={formValue.teamB}
-            onChange={(event) => updateField("teamB", event.target.value)}
-          />
+          <div className="tactical-input-wrap">
+            <input
+              id="team-b"
+              className="field"
+              placeholder="ENTER TEAM NAME"
+              value={formValue.teamB}
+              onChange={(event) => updateField("teamB", event.target.value)}
+            />
+          </div>
         </div>
 
         <div>
           <label className="label" htmlFor="map">
-            Map
+            Battlefield Assignment
           </label>
           <select
             id="map"
@@ -119,31 +128,34 @@ export function AddMatchForm({
 
         <div>
           <label className="label" htmlFor="score">
-            Score
+            Final Score (A - B)
           </label>
-          <input
-            id="score"
-            className="field"
-            placeholder="13-11"
-            value={formValue.score}
-            onChange={(event) => updateField("score", event.target.value)}
-          />
+          <div className="tactical-input-wrap">
+            <input
+              id="score"
+              className="field text-center font-display text-xl font-bold tracking-[0.08em]"
+              placeholder="13 - 10"
+              value={formValue.score}
+              onChange={(event) => updateField("score", event.target.value)}
+            />
+          </div>
         </div>
       </div>
 
-      <div>
+      <div className="mt-6">
         <label className="label" htmlFor="note">
-          Note
+          Combat Intel / Command Notes
         </label>
         <textarea
           id="note"
           className="textarea"
+          placeholder="ADDITIONAL MATCH DATA..."
           value={formValue.note ?? ""}
           onChange={(event) => updateField("note", event.target.value)}
         />
       </div>
 
-      <button className="button-primary" disabled={submitting} type="submit">
+      <button className="button-primary mt-8 w-full md:w-auto md:px-10" disabled={submitting} type="submit">
         {submitting
           ? initialMatch
             ? "Saving..."

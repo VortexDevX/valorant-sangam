@@ -131,165 +131,266 @@ export function VetoBoard({
   const nextStep = derived.nextStep;
   const instruction = buildInstruction(session, nextStep, derived);
   const canChooseMap = nextStep?.type === "ban" || nextStep?.type === "pick";
+  const sideTargetMap =
+    nextStep?.type === "side"
+      ? derived.result.maps.find((map) => map.order === nextStep.order)
+      : null;
 
   return (
-    <div className="space-y-6">
-      <section className="panel px-5 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="eyebrow">Live Veto</p>
-            <h2 className="mt-2 text-2xl font-bold uppercase tracking-[-0.04em]">
-              {session.teamA} vs {session.teamB}
-            </h2>
-          </div>
-          <div className="panel-soft px-4 py-3 text-right">
-            <p className="label !mb-1">Format</p>
-            <p className="mono text-lg uppercase">{session.format}</p>
-          </div>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section className="flex items-center justify-between bg-[var(--bg-accent-soft)] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="h-2 w-2 animate-pulse bg-[var(--bg-accent)]" />
+          <span className="font-display text-xs font-bold uppercase tracking-[0.2em]">
+            {instruction}
+          </span>
         </div>
-
-        <div className="status-info mt-5">{instruction}</div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {session.mapPool.map((mapId) => {
-            const mapMeta = MAP_LOOKUP[mapId];
-            const state = mapState(mapMeta.id, derived);
-            const clickable =
-              canChooseMap &&
-              state === "available" &&
-              nextStep &&
-              !busy;
-
-            return (
-              <button
-                key={mapMeta.id}
-                className={`panel-soft overflow-hidden text-left transition ${
-                  clickable ? "opacity-100" : "cursor-default opacity-70"
-                }`}
-                disabled={!clickable}
-                onClick={() => onApply({ map: mapMeta.id })}
-                type="button"
-              >
-                <div className="relative h-40">
-                  <MapPreview alt={mapMeta.label} src={mapMeta.imagePath} />
-                </div>
-                <div className="space-y-2 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-bold uppercase tracking-[-0.04em]">
-                      {mapMeta.label}
-                    </span>
-                    <span
-                      className={`mono text-xs uppercase ${
-                        state === "available"
-                          ? "text-[var(--success)]"
-                          : state === "picked"
-                            ? "text-[var(--text-primary)]"
-                            : state === "decider"
-                              ? "text-[var(--bg-accent)]"
-                              : "text-[var(--text-muted)]"
-                      }`}
-                    >
-                      {state}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {nextStep?.type === "decider" ? (
-          <div className="mt-5">
-            <button
-              className="button-primary"
-              disabled={busy}
-              onClick={() => onApply({})}
-              type="button"
-            >
-              {busy ? "Saving..." : "Confirm Decider"}
-            </button>
-          </div>
-        ) : null}
-
-        {nextStep?.type === "side" ? (
-          <div className="mt-5 flex gap-3">
-            <button
-              className="button-primary"
-              disabled={busy}
-              onClick={() => onApply({ side: "atk" })}
-              type="button"
-            >
-              {busy ? "Saving..." : "ATK"}
-            </button>
-            <button
-              className="button-secondary"
-              disabled={busy}
-              onClick={() => onApply({ side: "def" })}
-              type="button"
-            >
-              DEF
-            </button>
-          </div>
-        ) : null}
+        <span className="font-display text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[var(--text-accent)]">
+          {session.format}
+        </span>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="panel px-5 py-5">
-          <p className="eyebrow">Result Summary</p>
-          <div className="mt-4 space-y-3">
-            {derived.result.maps.length === 0 ? (
-              <div className="empty-state">No maps have been locked yet.</div>
-            ) : (
-              derived.result.maps.map((mapResult) => (
-                <div
-                  key={`${mapResult.order}-${mapResult.map}`}
-                  className="panel-soft grid gap-3 px-4 py-4 md:grid-cols-[auto_1fr]"
-                >
-                  <div className="mono text-sm text-[var(--text-secondary)]">
-                    MAP {mapResult.order}
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-bold uppercase tracking-[-0.04em]">
-                      {MAP_LOOKUP[mapResult.map].label}
-                    </p>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      {mapResult.isDecider
-                        ? "Decider map"
-                        : `Picked by ${teamLabel(session, mapResult.pickedBy ?? "teamA")}`}
-                      {mapResult.startingSide && mapResult.sideChosenBy
-                        ? ` | ${teamLabel(session, mapResult.sideChosenBy)} chose ${mapResult.startingSide.toUpperCase()}`
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="eyebrow">Live Veto</p>
+              <h2 className="mt-2 font-display text-3xl font-black uppercase tracking-[-0.06em]">
+                {session.teamA} vs {session.teamB}
+              </h2>
+            </div>
+            <div className="tactical-chip text-[var(--text-secondary)]">
+              Selected Pool: {session.mapPool.length}
+            </div>
           </div>
-        </section>
 
-        <section className="panel px-5 py-5">
-          <p className="eyebrow">Timeline</p>
-          <div className="mt-4 space-y-3">
-            {session.actions.length === 0 ? (
-              <div className="empty-state">Veto timeline will appear here.</div>
-            ) : (
-              session.actions.map((action, index) => (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {session.mapPool.map((mapId) => {
+              const mapMeta = MAP_LOOKUP[mapId];
+              const state = mapState(mapMeta.id, derived);
+              const clickable =
+                canChooseMap &&
+                state === "available" &&
+                nextStep &&
+                !busy;
+              const isSideTarget = sideTargetMap?.map === mapMeta.id;
+              const isDeciderTarget =
+                nextStep?.type === "decider" &&
+                derived.availableMaps.length === 1 &&
+                derived.availableMaps[0] === mapMeta.id;
+              const tileClasses = `group relative overflow-hidden text-left ${
+                clickable ? "cursor-crosshair" : "cursor-default"
+              }`;
+              const tileBody = (
                 <div
-                  key={`${action.step}-${action.createdAt}`}
-                  className="panel-soft px-4 py-4 text-sm text-[var(--text-secondary)]"
+                  className={`relative h-40 overflow-hidden ${
+                    state === "picked"
+                      ? "ring-2 ring-[var(--success)]"
+                      : state === "decider" || isDeciderTarget
+                        ? "ring-2 ring-[var(--bg-accent)]"
+                        : isSideTarget
+                          ? "ring-2 ring-[var(--text-accent)]"
+                          : "ring-1 ring-white/10"
+                  }`}
                 >
-                  <span className="mono text-xs text-[var(--text-muted)]">
-                    STEP {action.step}
-                  </span>
-                  <p className="mt-2 text-[var(--text-primary)]">
-                    {timelineText(session, index)}
-                  </p>
+                  <MapPreview alt={mapMeta.label} src={mapMeta.imagePath} />
+                  <div
+                    className={`absolute inset-0 ${
+                      state === "banned"
+                        ? "bg-[rgba(5,15,25,0.82)]"
+                        : state === "picked"
+                          ? "bg-[rgba(18,164,125,0.18)]"
+                          : state === "decider" || isDeciderTarget
+                            ? "bg-[rgba(255,70,85,0.18)]"
+                            : "bg-gradient-to-t from-black/75 to-transparent"
+                    }`}
+                  />
+
+                  {state === "banned" ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-display text-5xl font-light text-[var(--bg-accent)]">
+                        ×
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span
+                        className={`font-display text-[0.62rem] font-black uppercase tracking-[0.18em] ${
+                          state === "picked"
+                            ? "text-[var(--success)]"
+                            : state === "decider"
+                              ? "text-[var(--text-accent)]"
+                              : state === "banned"
+                                ? "text-[var(--bg-accent)]"
+                                : "text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        {state}
+                      </span>
+                      <span className="font-display text-xs font-black uppercase tracking-[0.12em] text-white">
+                        {mapMeta.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isSideTarget ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[rgba(5,15,25,0.72)] px-4 backdrop-blur-sm">
+                      <span className="font-display text-[0.58rem] font-black uppercase tracking-[0.22em] text-[var(--text-accent)]">
+                        Side Selection
+                      </span>
+                      <div className="flex w-full gap-2">
+                        <button
+                          className="flex-1 bg-white px-3 py-2 font-display text-[0.72rem] font-black uppercase tracking-[0.16em] text-[var(--bg-app)]"
+                          disabled={busy}
+                          onClick={() => {
+                            void onApply({ side: "atk" });
+                          }}
+                          type="button"
+                        >
+                          ATK
+                        </button>
+                        <button
+                          className="flex-1 bg-[var(--bg-panel-high)] px-3 py-2 font-display text-[0.72rem] font-black uppercase tracking-[0.16em] text-white"
+                          disabled={busy}
+                          onClick={() => {
+                            void onApply({ side: "def" });
+                          }}
+                          type="button"
+                        >
+                          DEF
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ))
-            )}
+              );
+
+              if (clickable) {
+                return (
+                  <button
+                    key={mapMeta.id}
+                    className={tileClasses}
+                    onClick={() => onApply({ map: mapMeta.id })}
+                    type="button"
+                  >
+                    {tileBody}
+                  </button>
+                );
+              }
+
+              return (
+                <div key={mapMeta.id} className={tileClasses}>
+                  {tileBody}
+                </div>
+              );
+            })}
           </div>
-        </section>
-      </div>
+
+          {nextStep?.type === "decider" ? (
+            <div className="flex justify-start">
+              <button
+                className="button-primary"
+                disabled={busy}
+                onClick={() => onApply({})}
+                type="button"
+              >
+                {busy ? "Saving..." : "Confirm Decider"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-4">
+          <section className="bg-[var(--bg-panel-low)]">
+            <div className="flex items-center gap-2 bg-[var(--bg-panel-high)] px-4 py-3">
+              <span className="tactical-accent h-2 w-2 !h-2 !w-2" />
+              <h3 className="font-display text-[0.68rem] font-bold uppercase tracking-[0.22em]">
+                Protocol_Logs
+              </h3>
+            </div>
+            <div className="tactical-scroll max-h-72 space-y-3 overflow-y-auto px-4 py-4">
+              {session.actions.length === 0 ? (
+                <div className="text-sm text-[var(--text-secondary)]">
+                  Waiting for first veto action.
+                </div>
+              ) : (
+                session.actions.map((action, index) => (
+                  <div
+                    key={`${action.step}-${action.createdAt}`}
+                    className="flex items-start gap-4 text-[0.72rem]"
+                  >
+                    <span className="mono shrink-0 text-[var(--text-muted)]">
+                      STEP {String(action.step).padStart(2, "0")}
+                    </span>
+                    <p className="leading-6 text-[var(--text-primary)]">
+                      {timelineText(session, index)}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="bg-[var(--bg-accent)] px-5 py-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-sm font-black uppercase tracking-[0.22em] text-white">
+                Final_Pool
+              </h3>
+              <span className="font-display text-[0.62rem] uppercase tracking-[0.18em] text-white/70">
+                Match Confirmed
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+              {derived.result.maps.length === 0 ? (
+                <div className="col-span-full bg-white/10 px-4 py-4 text-sm text-white/80">
+                  Final maps will populate here as the veto progresses.
+                </div>
+              ) : (
+                derived.result.maps.map((mapResult) => (
+                  <div
+                    key={`${mapResult.order}-${mapResult.map}`}
+                    className="border border-white/20 bg-[rgba(91,0,15,0.15)] px-3 py-3 text-center"
+                  >
+                    <div className="font-display text-[0.55rem] uppercase tracking-[0.18em] text-white/65">
+                      Map {String(mapResult.order).padStart(2, "0")}
+                    </div>
+                    <div className="mt-1 font-display text-[0.78rem] font-black uppercase tracking-[0.14em] text-white">
+                      {MAP_LOOKUP[mapResult.map].label}
+                    </div>
+                    {mapResult.startingSide ? (
+                      <div className="mt-2 font-display text-[0.55rem] uppercase tracking-[0.18em] text-white/75">
+                        {mapResult.startingSide}
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-1">
+                <p className="font-display text-[0.55rem] font-bold uppercase tracking-[0.2em] text-white/70">
+                  Match Confirmed
+                </p>
+                <p className="font-display text-xl font-black uppercase tracking-[-0.05em] text-white">
+                  {session.teamA} vs {session.teamB}
+                </p>
+              </div>
+              <div className="text-left md:text-right">
+                <p className="font-display text-[0.55rem] font-bold uppercase tracking-[0.2em] text-white/70">
+                  Format
+                </p>
+                <p className="font-display text-sm font-black uppercase tracking-[0.16em] text-white">
+                  {session.format}
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
     </div>
   );
 }

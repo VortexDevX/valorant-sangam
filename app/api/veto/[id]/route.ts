@@ -1,10 +1,13 @@
 import { ObjectId } from "mongodb";
 import { getAuthorizedAdmin } from "@/lib/auth";
+import { logApiError } from "@/lib/api-errors";
 import { MAP_POOL, isMapId, type MapId } from "@/lib/map-pool";
 import { getDb } from "@/lib/mongodb";
 import { applyVetoAction, deriveVetoState } from "@/lib/veto-engine";
 import { vetoActionSchema } from "@/lib/validators";
 import type { SeriesFormat, VetoSessionRecord } from "@/types/veto";
+
+export const runtime = "nodejs";
 
 function serializeVetoSession(
   session: Record<string, unknown>,
@@ -108,7 +111,8 @@ export async function GET(
       },
       derived,
     });
-  } catch {
+  } catch (error) {
+    logApiError("GET /api/veto/[id]", error);
     return Response.json({ error: "Failed to load veto session." }, { status: 500 });
   }
 }
@@ -183,6 +187,7 @@ export async function PATCH(
       derived,
     });
   } catch (error) {
+    logApiError("PATCH /api/veto/[id]", error);
     return Response.json(
       {
         error:

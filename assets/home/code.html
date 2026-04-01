@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VALORANT SANGAM | Match History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0a141e;
+            color: #d9e3f2;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .font-label { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#bd0c2d",
+                        "background": "#0a141e",
+                        "on-primary-fixed-variant": "#92001f",
+                        "tertiary-fixed": "#7ff9cc",
+                        "surface-container-highest": "#2c3641",
+                        "secondary-fixed-dim": "#cac6bf",
+                        "surface-container-lowest": "#050f19",
+                        "on-tertiary-fixed-variant": "#00513c",
+                        "on-secondary-fixed": "#1c1c18",
+                        "secondary": "#cac6bf",
+                        "on-error": "#690005",
+                        "surface-variant": "#2c3641",
+                        "on-surface-variant": "#e4bdbc",
+                        "surface-container-low": "#121c27",
+                        "surface-container-high": "#212b35",
+                        "outline-variant": "#5b403f",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#003828",
+                        "on-tertiary-container": "#003122",
+                        "on-surface": "#d9e3f2",
+                        "on-secondary-fixed-variant": "#484742",
+                        "surface-bright": "#303a45",
+                        "tertiary-fixed-dim": "#60dcb0",
+                        "primary-fixed": "#ffdad9",
+                        "primary-container": "#ff525d",
+                        "outline": "#ab8887",
+                        "on-error-container": "#ffdad6",
+                        "on-primary": "#680013",
+                        "tertiary-container": "#12a47d",
+                        "secondary-fixed": "#e6e2db",
+                        "on-primary-fixed": "#410008",
+                        "on-secondary-container": "#b8b5ae",
+                        "on-secondary": "#31302c",
+                        "inverse-on-surface": "#27313c",
+                        "surface": "#0a141e",
+                        "secondary-container": "#484742",
+                        "surface-dim": "#0a141e",
+                        "inverse-surface": "#d9e3f2",
+                        "on-primary-container": "#5b000f",
+                        "surface-container": "#17202b",
+                        "primary-fixed-dim": "#ffb3b2",
+                        "on-tertiary-fixed": "#002116",
+                        "primary": "#ffb3b2",
+                        "tertiary": "#60dcb0",
+                        "surface-tint": "#ffb3b2",
+                        "on-background": "#d9e3f2"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    },
+                    borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "0"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<header class="w-full top-0 border-l-4 border-[#ff4655] bg-[#0a141e] sticky z-40">
+<div class="flex flex-col justify-center px-6 py-4 w-full">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#ff4655] active:scale-95 transition-transform p-2 hover:bg-[#ff4655]/10">menu</button>
+<span class="text-2xl font-black text-[#ff4655] tracking-widest font-headline uppercase">VALORANT SANGAM</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="font-['Space_Grotesk'] uppercase tracking-tighter text-[13px] font-bold text-[#ffb3b2] transition-colors" href="#">MATCHES</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-tighter text-[13px] font-bold text-[#212b35] hover:text-[#ffb3b2] transition-colors" href="#">INTEL</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-tighter text-[13px] font-bold text-[#212b35] hover:text-[#ffb3b2] transition-colors" href="#">RANK</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-tighter text-[13px] font-bold text-[#212b35] hover:text-[#ffb3b2] transition-colors" href="#">ROSTER</a>
+</nav>
+<button class="material-symbols-outlined text-[#ff4655] active:scale-95 transition-transform p-2 hover:bg-[#ff4655]/10">settings</button>
+</div>
+</div>
+</div>
+</header>
+<main class="min-h-screen pb-24">
+<section class="relative h-[353px] min-h-[300px] flex items-end px-6 md:px-12 py-12 overflow-hidden bg-surface-container-lowest">
+<div class="absolute inset-0 z-0 opacity-40">
+<img alt="Cinematic wide shot of a tactical cyberpunk command center with holographic screens and red atmospheric lighting" class="w-full h-full object-cover" data-alt="Cinematic wide shot of a tactical cyberpunk command center with holographic screens and red atmospheric lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bl3NUj_JhrD817_VfeHn3HLcYyVNa0fnI3DYlRxjB6So27x1q-_iVikGHT7mBJ3EIg_DuqeJfo_RalcCYqXQ0f1uc6CvjycQolDeOtDmKzxUUQ9lKtgiVXdWZeoJ89m7N4T_lBhXJcpaIeSoz2F73i7pFKw09xwDU1YD30f6xqHx2KIdu0AS5N0Ykddg8JIYaf9IwoSgh3P2lHTosaBaxKHIa4hPUueeOfHtY76Pu4SldW51QWvg5O0vT7DgwqfbyWD_MD7YcA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+<div class="relative z-10 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3 mb-2">
+<span class="w-3 h-3 bg-primary-container inline-block"></span>
+<span class="font-label text-primary font-bold tracking-[0.2em] text-xs">SYSTEM STATUS: OPERATIONAL</span>
+</div>
+<h1 class="font-headline text-5xl md:text-7xl font-black tracking-tighter uppercase mb-2">VALORANT SANGAM</h1>
+<p class="font-label text-on-surface-variant text-sm md:text-lg tracking-wide max-w-2xl border-l-2 border-primary-container pl-4">
+                    Tactical Intelligence Interface | Tournament Hub <br/>
+<span class="opacity-60 text-xs font-mono uppercase mt-1 block">Data Stream: Public_Match_History_v2.04</span>
+</p>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-6 py-12">
+<div class="flex flex-col md:flex-row gap-4 mb-12 items-baseline justify-between border-b border-surface-container-highest pb-6">
+<h2 class="font-headline text-3xl font-extrabold uppercase tracking-tight flex items-center gap-4">
+                    MATCH ARCHIVE
+                    <span class="text-xs bg-surface-container-high px-2 py-1 font-label text-tertiary">2,842 RECORDS FOUND</span>
+</h2>
+<div class="flex gap-4 font-label text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">
+<span class="text-primary">ALL REGIONS</span>
+<span class="opacity-30">PRO CIRCUIT</span>
+<span class="opacity-30">COMMUNITY</span>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<div class="group flex flex-col md:flex-row items-stretch bg-surface-container-low hover:bg-surface-container transition-colors duration-200 border-l-2 border-transparent hover:border-primary-container">
+<div class="w-full md:w-48 relative overflow-hidden bg-surface-container-highest">
+<img alt="Stylized top-down view of the Ascent map from Valorant with technical overlays and red tactical markers" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Stylized top-down view of the Ascent map from Valorant with technical overlays and red tactical markers" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKRN7LtVnpGBhRIQgIOH9uMCXiM0mhSKwiEUKxf806-qdi1TwJocwbKg9_Byc0M-qyP_ZzozJtwPD8gXgSOP1H2Xc0piQ341D3CsgDbczyAndWZneQRgPH8WYECA60okeHiOMvztcXzUZzPlcmbSyPvDDDVYEOrRLli9qSo9Xd7Fb8uy_7R2LbCWBz6hN-P-cWWFknkFCrNpGPYJ_L3-YKazZ5nPaktk5CTPy3zuGSquUTN0kEI_PHFWnqtF3t2GesTSs4tmx2tg"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline font-black text-xl tracking-widest uppercase text-white drop-shadow-md">ASCENT</span>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 p-6 items-center">
+<div class="flex items-center justify-between md:justify-start gap-8">
+<div class="text-center md:text-left">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM A</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">SENTINELS</div>
+</div>
+<div class="font-headline font-black text-4xl text-primary-container">13</div>
+</div>
+<div class="flex flex-col items-center justify-center gap-1 border-y md:border-y-0 md:border-x border-surface-container-highest py-4 md:py-0">
+<div class="font-label text-[10px] font-black text-tertiary uppercase tracking-widest mb-1">GRAND FINAL</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body text-xs font-medium tracking-tight">MAR 24, 2024 • 18:30 GMT</span>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="font-headline font-black text-4xl text-on-surface-variant group-hover:text-on-surface transition-colors">10</div>
+<div class="text-center md:text-right">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM B</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">LOUD</div>
+</div>
+</div>
+</div>
+</div>
+<div class="group flex flex-col md:flex-row items-stretch bg-surface-container-high hover:bg-surface-container transition-colors duration-200 border-l-2 border-transparent hover:border-primary-container">
+<div class="w-full md:w-48 relative overflow-hidden bg-surface-container-highest">
+<img alt="Stylized top-down view of the Bind map from Valorant showing desert architecture with high contrast shadows" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Stylized top-down view of the Bind map from Valorant showing desert architecture with high contrast shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoW-tbC9gsE7y2k9bApUNzMadRGoU1--jhMJ4VduBXOyQNK5XCJahIOQZVcb7-QDSfJez-5X8sktdojskR6BJYKijWqnxVHp0jBYV6mqwLijnuOz5P6cjJyxxxOuOHeabKf9wKv3KLLRPEioWT5BlsufMrYaM6-MRHJt0RBoj49ywqt7iIMeMxD629L8UDAT6eEGSZXSTkHzbk-naAhKKPdXsHgy6opIdCMuCgQQFiZDDhhsnSoLi10v_WTjVGpNq2FLw4ecnqJg"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline font-black text-xl tracking-widest uppercase text-white drop-shadow-md">BIND</span>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 p-6 items-center">
+<div class="flex items-center justify-between md:justify-start gap-8">
+<div class="text-center md:text-left">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM A</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">FNATIC</div>
+</div>
+<div class="font-headline font-black text-4xl text-primary-container">13</div>
+</div>
+<div class="flex flex-col items-center justify-center gap-1 border-y md:border-y-0 md:border-x border-surface-container-highest py-4 md:py-0">
+<div class="font-label text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">SEMI-FINAL</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body text-xs font-medium tracking-tight">MAR 23, 2024 • 21:00 GMT</span>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="font-headline font-black text-4xl text-on-surface-variant group-hover:text-on-surface transition-colors">05</div>
+<div class="text-center md:text-right">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM B</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">NRG</div>
+</div>
+</div>
+</div>
+</div>
+<div class="group flex flex-col md:flex-row items-stretch bg-surface-container-low hover:bg-surface-container transition-colors duration-200 border-l-2 border-transparent hover:border-primary-container">
+<div class="w-full md:w-48 relative overflow-hidden bg-surface-container-highest">
+<img alt="Aerial perspective of the Haven map showing eastern architecture and temple grounds with tactical overlay" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Aerial perspective of the Haven map showing eastern architecture and temple grounds with tactical overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8N6qIDrXAr1JFwt9hQiotPzQofaggMhYUCieKXSypV2wZGFup_k08eUNaINgQU_RlokyDAyRbgl0eBGJ2v0NxxRKF27S82aTjHLHYjaJOtLBhQE4NNILVl7287A2HsL-yUrMuZkKjWlRJl68G6__EIMJfUIG1IGjvQtNMzKkbv4yvfZpgiwWw2ny5e49lTapfx3MVP1h-QQemEsLUR7cVTFeSr9Jy0VDSxKuO-Z5rtGIqnIdIG0-FLIu7W75nwXUm7SUw9Ry-0A"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline font-black text-xl tracking-widest uppercase text-white drop-shadow-md">HAVEN</span>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 p-6 items-center">
+<div class="flex items-center justify-between md:justify-start gap-8">
+<div class="text-center md:text-left">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM A</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">DRX</div>
+</div>
+<div class="font-headline font-black text-4xl text-on-surface-variant group-hover:text-on-surface transition-colors">11</div>
+</div>
+<div class="flex flex-col items-center justify-center gap-1 border-y md:border-y-0 md:border-x border-surface-container-highest py-4 md:py-0">
+<div class="font-label text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">UPPER BRACKET</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body text-xs font-medium tracking-tight">MAR 22, 2024 • 15:45 GMT</span>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="font-headline font-black text-4xl text-primary-container">13</div>
+<div class="text-center md:text-right">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM B</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">PAPER REX</div>
+</div>
+</div>
+</div>
+</div>
+<div class="group flex flex-col md:flex-row items-stretch bg-surface-container-high hover:bg-surface-container transition-colors duration-200 border-l-2 border-transparent hover:border-primary-container">
+<div class="w-full md:w-48 relative overflow-hidden bg-surface-container-highest">
+<img alt="Overhead tactical view of the Icebox map from Valorant showing snowy industrial containers and metal structures" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Overhead tactical view of the Icebox map from Valorant showing snowy industrial containers and metal structures" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKvIYrYQP6aC-WJGqYZlauRT1n9Y7LUAzJnG2qCBcfZMFhAMdchbhsA7X-FI2LEfopW-NT4D9df71C-ovazjLcsj-0OTUmFpw5ZY4hxuQgGJqdI-RZLe9ZUC2nQ1u4a4jrYCy4s6Es1IF9SqWEGDEeAhqkWaPZlHgSbS38DokrTZoif39aQXpHH2uEP4wLEYWUrfeda0xUITS8UWEN0qawm2NTLm5jkSjgTE0ilM-vGIgYP7p5Vasg5Kt9h7LogWOUcGHoXshR3Q"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline font-black text-xl tracking-widest uppercase text-white drop-shadow-md">ICEBOX</span>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 p-6 items-center">
+<div class="flex items-center justify-between md:justify-start gap-8">
+<div class="text-center md:text-left">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM A</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">T1</div>
+</div>
+<div class="font-headline font-black text-4xl text-primary-container">13</div>
+</div>
+<div class="flex flex-col items-center justify-center gap-1 border-y md:border-y-0 md:border-x border-surface-container-highest py-4 md:py-0">
+<div class="font-label text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">GROUP STAGE</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body text-xs font-medium tracking-tight">MAR 21, 2024 • 19:15 GMT</span>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="font-headline font-black text-4xl text-on-surface-variant group-hover:text-on-surface transition-colors">02</div>
+<div class="text-center md:text-right">
+<div class="font-label text-[10px] text-on-surface-variant mb-1">TEAM B</div>
+<div class="font-headline font-bold text-xl uppercase tracking-tight text-on-surface">ZETA DIVISION</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-12 flex justify-center">
+<button class="bg-surface-container-high hover:bg-primary-container text-on-surface font-headline font-black py-4 px-12 tracking-widest uppercase transition-all duration-300 flex items-center gap-4 group">
+                    DECRYPT MORE RECORDS
+                    <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">keyboard_double_arrow_down</span>
+</button>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-6 py-12">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="bg-surface-container-lowest p-8 border-t-2 border-tertiary">
+<h3 class="font-headline text-xl font-black uppercase mb-4 text-tertiary">SYSTEM ANALYTICS</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container p-4">
+<div class="font-label text-[10px] text-on-surface-variant uppercase mb-1">AVG MATCH DURATION</div>
+<div class="font-headline text-2xl font-bold">42m 12s</div>
+</div>
+<div class="bg-surface-container p-4">
+<div class="font-label text-[10px] text-on-surface-variant uppercase mb-1">WIN RATE (DEFENSE)</div>
+<div class="font-headline text-2xl font-bold">54.2%</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-8 border-t-2 border-primary-container">
+<h3 class="font-headline text-xl font-black uppercase mb-4 text-primary-container">UPCOMING PROTOCOLS</h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center bg-surface-container p-3">
+<span class="font-label text-xs font-bold">CHAMPIONS TOUR #4</span>
+<span class="font-body text-[10px] bg-primary-container px-2 py-0.5">LIVE</span>
+</div>
+<div class="flex justify-between items-center bg-surface-container p-3">
+<span class="font-label text-xs font-bold">REGIONAL FINALS</span>
+<span class="font-body text-[10px] text-on-surface-variant">IN 2 DAYS</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-stretch z-50 bg-[#050f19] md:hidden">
+<a class="flex flex-col items-center justify-center bg-[#ff4655] text-[#ffffff] p-3 flex-1 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Space_Grotesk'] uppercase text-[10px] font-bold mt-1">MATCHES</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#212b35] p-3 flex-1 hover:text-[#ffb3b2] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-['Space_Grotesk'] uppercase text-[10px] font-bold mt-1">INTEL</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#212b35] p-3 flex-1 hover:text-[#ffb3b2] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">military_tech</span>
+<span class="font-['Space_Grotesk'] uppercase text-[10px] font-bold mt-1">RANK</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#212b35] p-3 flex-1 hover:text-[#ffb3b2] transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Space_Grotesk'] uppercase text-[10px] font-bold mt-1">ROSTER</span>
+</a>
+</nav>
+<footer class="bg-surface-container-lowest py-12 px-6 border-t border-surface-container-highest">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="text-center md:text-left">
+<div class="font-headline font-black text-xl text-primary-container tracking-[0.3em] uppercase mb-2">VALORANT SANGAM</div>
+<div class="font-label text-[10px] text-on-surface-variant tracking-widest uppercase">Unauthorized access is prohibited by tactical protocol</div>
+</div>
+<div class="flex gap-8 font-label text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">
+<a class="hover:text-primary transition-colors" href="#">SECURITY</a>
+<a class="hover:text-primary transition-colors" href="#">NETWORK</a>
+<a class="hover:text-primary transition-colors" href="#">API ACCESS</a>
+<a class="hover:text-primary transition-colors" href="#">SUPPORT</a>
+</div>
+<div class="text-right hidden md:block">
+<span class="font-label text-[10px] text-on-surface-variant uppercase opacity-50 tracking-tighter">ESTABLISHED 2024.11 // SERVER_REGION: SOUTHEAST_ASIA</span>
+</div>
+</div>
+</footer>
+</body></html>

@@ -11,7 +11,6 @@ interface BracketBoardProps {
   bracket: BracketRecord;
   busy?: boolean;
   editable?: boolean;
-  exportId?: string;
   onEditTeamName?: (seed: number, name: string) => void;
   onPickWinner?: (round: number, match: number, winnerSeed: number | null) => Promise<void> | void;
 }
@@ -525,14 +524,13 @@ export function BracketBoard({
   bracket,
   busy = false,
   editable = false,
-  exportId,
   onPickWinner,
 }: BracketBoardProps) {
   const matches = useMemo(() => toTournamentMatches(bracket), [bracket]);
 
   if (bracket.rounds.length === 0) {
     return (
-      <section className="bracket-engine-frame" id={exportId}>
+      <section className="bracket-engine-frame">
         <div className="bracket-engine-header">
           <div>
             <p className="eyebrow">Bracket Board</p>
@@ -562,7 +560,7 @@ export function BracketBoard({
   }
 
   return (
-    <section className="bracket-engine-frame" id={exportId}>
+    <section className="bracket-engine-frame">
       <div className="bracket-engine-header">
         <div>
           <p className="eyebrow">Bracket Board</p>

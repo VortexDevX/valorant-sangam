@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BracketBoard } from "@/components/bracket-board";
-import {
-  downloadBracketCard,
-  downloadRenderedBracketPng,
-} from "@/lib/export-cards";
 import { useAdminSession } from "@/components/admin-session";
 import { StatusToasts } from "@/components/status-toasts";
 import { buildSeedOrder, computeBracketView, normalizeBracketTeams } from "@/lib/brackets";
@@ -18,8 +14,6 @@ import type { SeriesFormat } from "@/types/veto";
 interface AdminBracketWorkspaceProps {
   bracketId: string;
 }
-
-const ADMIN_BRACKET_EXPORT_ID = "admin-bracket-export";
 
 export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps) {
   const { token } = useAdminSession();
@@ -507,30 +501,6 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           <div className="flex flex-wrap gap-3">
             <button
               className="button-secondary"
-              onClick={() => {
-                void downloadRenderedBracketPng(
-                  previewBracket,
-                  `${previewBracket.slug || "bracket"}-board.png`,
-                );
-              }}
-              type="button"
-            >
-              Download Bracket PNG
-            </button>
-            <button
-              className="button-secondary"
-              onClick={() =>
-                downloadBracketCard(
-                  previewBracket,
-                  previewBracket.championName ? "champion" : "summary",
-                )
-              }
-              type="button"
-            >
-              Download Champion Card
-            </button>
-            <button
-              className="button-secondary"
               onClick={() => void copyPublicBracketLink()}
               type="button"
             >
@@ -638,7 +608,6 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           bracket={previewBracket}
           busy={busy}
           editable={!hasUnsavedChanges && setupComplete}
-          exportId={ADMIN_BRACKET_EXPORT_ID}
           onPickWinner={!hasUnsavedChanges && setupComplete ? pickWinner : undefined}
         />
 

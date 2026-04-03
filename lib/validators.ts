@@ -84,7 +84,6 @@ export const vetoSessionSchema = z
 export const vetoActionSchema = z.object({
   map: z.enum(MAP_POOL).optional(),
   side: z.enum(["atk", "def"]).optional(),
-  undo: z.boolean().optional(),
 });
 
 export const seriesCreateSchema = z
@@ -118,6 +117,16 @@ export const seriesResultSchema = z.object({
   note: z.string().trim().max(240, "Note is too long.").optional().or(z.literal("")),
 });
 
+export const seriesUpdateSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("swap_sides"),
+  }),
+  z.object({
+    action: z.literal("set_lock"),
+    locked: z.boolean(),
+  }),
+]);
+
 export const bracketCreateSchema = z.object({
   title: z.string().trim().min(1, "Bracket title is required.").max(80, "Title is too long."),
   teamCount: z.coerce.number().int().min(1, "Minimum 1 team required.").max(32, "Maximum 32 teams allowed."),
@@ -145,8 +154,14 @@ export const bracketUpdateSchema = z.object({
   title: z.string().trim().min(1, "Bracket title is required.").max(80, "Title is too long.").optional(),
   teams: bracketTeamsSchema.optional(),
   format: z.enum(["bo1", "bo3", "bo5"]).optional(),
+  locked: z.boolean().optional(),
 });
 
 export const bracketWinnerSchema = z.object({
   winnerSeed: z.number().int().positive().nullable(),
+});
+
+export const bracketContinuationSchema = z.object({
+  continuationSeriesId: z.string().trim().min(1, "Continuation series is required.").nullable(),
+  note: z.string().trim().max(240, "Note is too long.").optional().or(z.literal("")),
 });

@@ -12,7 +12,6 @@ import type {
 export interface VetoActionInput {
   map?: MapId;
   side?: StartingSide;
-  undo?: boolean;
 }
 
 interface SessionShape {
@@ -123,14 +122,6 @@ export function applyVetoAction(
   session: Pick<VetoSessionRecord, "format" | "mapPool" | "actions">,
   input: VetoActionInput,
 ) {
-  if (input.undo) {
-    if (session.actions.length === 0) {
-      throw new Error("There is no veto action to undo.");
-    }
-
-    return session.actions.slice(0, -1);
-  }
-
   const derived = deriveVetoState(session);
   const nextStep = derived.nextStep;
 

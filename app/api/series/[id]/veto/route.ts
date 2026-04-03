@@ -55,6 +55,13 @@ export async function POST(
 
     const series = serializeSeries(existing as Record<string, unknown>);
 
+    if (series.locked) {
+      return Response.json(
+        { error: "This series is locked. Unlock it before starting veto." },
+        { status: 409 },
+      );
+    }
+
     if (series.results.length > 0) {
       return Response.json(
         { error: "Cannot reset veto after results have been added." },
@@ -128,6 +135,13 @@ export async function PATCH(
     }
 
     const series = serializeSeries(existing as Record<string, unknown>);
+
+    if (series.locked) {
+      return Response.json(
+        { error: "This series is locked. Unlock it before updating veto." },
+        { status: 409 },
+      );
+    }
 
     if (!series.veto) {
       return Response.json({ error: "Veto has not been started yet." }, { status: 400 });

@@ -68,6 +68,16 @@ function listDesiredBracketSeries(bracket: BracketRecord) {
     .filter((entry): entry is DesiredBracketSeries => entry !== null);
 }
 
+function hasSameParticipants(existing: SeriesRecord, desired: DesiredBracketSeries) {
+  return (
+    existing.pairKey === desired.pairKey &&
+    (
+      (existing.teamASlug === desired.teamASlug && existing.teamBSlug === desired.teamBSlug) ||
+      (existing.teamASlug === desired.teamBSlug && existing.teamBSlug === desired.teamASlug)
+    )
+  );
+}
+
 function isBracketLinkedSeriesMutable(series: SeriesRecord) {
   return series.bracket !== null && series.veto === null && series.results.length === 0;
 }
@@ -110,6 +120,7 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
     bracketSize: bracket.bracketSize,
     teams: bracket.teams,
     winners: bracket.winners,
+    manualResolutions: bracket.manualResolutions,
     linkedSeries,
   });
   const projectedBracket: BracketRecord = {
@@ -152,6 +163,8 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
           round: desired.round,
           match: desired.match,
         },
+        manualContinuation: null,
+        locked: false,
         format: desired.format,
         veto: null,
         results: [],
@@ -162,12 +175,17 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
       continue;
     }
 
+    const sameParticipants = hasSameParticipants(existing, desired);
     const teamsChanged =
-      existing.teamA !== desired.teamA ||
-      existing.teamB !== desired.teamB ||
-      existing.teamASlug !== desired.teamASlug ||
-      existing.teamBSlug !== desired.teamBSlug ||
-      existing.format !== desired.format;
+      (!sameParticipants ||
+        existing.format !== desired.format) &&
+      (
+        existing.teamA !== desired.teamA ||
+        existing.teamB !== desired.teamB ||
+        existing.teamASlug !== desired.teamASlug ||
+        existing.teamBSlug !== desired.teamBSlug ||
+        existing.format !== desired.format
+      );
     const titleChanged = existing.bracket?.title !== bracket.title;
 
     if (!teamsChanged && !titleChanged) {

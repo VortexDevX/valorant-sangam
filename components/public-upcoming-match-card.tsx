@@ -39,10 +39,10 @@ export function PublicUpcomingMatchCard({
         : null;
 
   return (
-    <article className="public-card public-card--upcoming group px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
+    <article className="public-card public-card--upcoming group min-h-[26rem] px-4 py-4 sm:px-5 sm:py-5 md:min-h-[27rem] md:px-6 md:py-6">
       {withMapBackdrop ? (
         <>
-          <div className="pointer-events-none absolute inset-0 opacity-[0.72]">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.64]">
             <Image
               alt={MAP_LOOKUP[mapSlot.map].label}
               className="h-full w-full object-cover"
@@ -52,7 +52,7 @@ export function PublicUpcomingMatchCard({
               src={MAP_LOOKUP[mapSlot.map].imagePath}
             />
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,10,20,0.34),rgba(10,20,30,0.66)_42%,rgba(10,20,30,0.86))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,10,20,0.18),rgba(10,20,30,0.52)_42%,rgba(10,20,30,0.78))]" />
         </>
       ) : null}
       <div className="public-card-shell">
@@ -78,7 +78,7 @@ export function PublicUpcomingMatchCard({
           <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)] md:block" />
           <div className="relative grid items-center justify-items-center gap-3 text-center md:grid-cols-[minmax(0,1fr)_5.25rem_minmax(0,1fr)] md:justify-items-stretch md:text-left">
             <Link
-              className="min-w-0 wrap-break-word font-display text-2xl font-black uppercase leading-none tracking-[-0.05em] text-white transition hover:text-(--text-accent) sm:text-3xl md:text-right"
+              className="min-w-0 break-words font-display text-2xl font-black uppercase leading-none tracking-[-0.05em] text-white transition hover:text-(--text-accent) sm:text-3xl md:text-right"
               href={`/team/${series.teamASlug}`}
             >
               {series.teamA}
@@ -87,13 +87,13 @@ export function PublicUpcomingMatchCard({
               VS
             </span>
             <Link
-              className="min-w-0 wrap-break-word font-display text-2xl font-black uppercase leading-none tracking-[-0.05em] text-white transition hover:text-(--text-accent) sm:text-3xl"
+              className="min-w-0 break-words font-display text-2xl font-black uppercase leading-none tracking-[-0.05em] text-white transition hover:text-(--text-accent) sm:text-3xl"
               href={`/team/${series.teamBSlug}`}
             >
               {series.teamB}
             </Link>
           </div>
-          <div className="relative mt-4 flex flex-wrap items-center justify-center gap-2 text-center text-[0.68rem] sm:gap-3 sm:text-[0.72rem] md:justify-start md:text-left">
+          <div className="relative mt-4 min-h-[2.75rem] flex flex-wrap items-center justify-center gap-2 text-center text-[0.7rem] sm:gap-3 sm:text-[0.76rem] md:justify-start md:text-left">
             <span className="font-display uppercase tracking-[0.14em] text-(--text-accent) sm:tracking-[0.16em]">
               {mapSlot.isDecider
                 ? "Decider map"
@@ -114,19 +114,19 @@ export function PublicUpcomingMatchCard({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="overflow-hidden border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_42%),var(--bg-panel)] px-4 py-4">
             <div className="mb-3 h-0.5 w-10 bg-[rgba(255,255,255,0.18)]" />
-            <div className="font-display text-[0.68rem] font-bold uppercase tracking-[0.16em] text-(--text-secondary)">
+            <div className="font-display text-[0.72rem] font-bold uppercase tracking-[0.16em] text-(--text-secondary)">
               ATK
             </div>
-            <div className="mt-3 wrap-break-word font-display text-lg font-black uppercase tracking-[-0.04em] text-white sm:text-xl">
+            <div className="mt-3 break-words font-display text-lg font-black uppercase tracking-[-0.04em] text-white sm:text-xl">
               {sides?.atk ?? "Pending"}
             </div>
           </div>
           <div className="overflow-hidden border border-[rgba(255,70,85,0.14)] bg-[linear-gradient(180deg,rgba(255,70,85,0.09),transparent_42%),var(--bg-panel)] px-4 py-4">
             <div className="mb-3 h-0.5 w-10 bg-(--bg-accent)" />
-            <div className="font-display text-[0.68rem] font-bold uppercase tracking-[0.16em] text-(--text-accent)">
+            <div className="font-display text-[0.72rem] font-bold uppercase tracking-[0.16em] text-(--text-accent)">
               DEF
             </div>
-            <div className="mt-3 wrap-break-word font-display text-lg font-black uppercase tracking-[-0.04em] text-white sm:text-xl">
+            <div className="mt-3 break-words font-display text-lg font-black uppercase tracking-[-0.04em] text-white sm:text-xl">
               {sides?.def ?? "Pending"}
             </div>
           </div>

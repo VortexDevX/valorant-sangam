@@ -47,7 +47,7 @@ export function StatusToasts({
       {error ? (
         <div
           aria-live="assertive"
-          className="pointer-events-auto overflow-hidden border border-[rgba(255,70,85,0.22)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_2rem),linear-gradient(135deg,rgba(255,70,85,0.08),transparent_34%),var(--bg-panel)] shadow-[0_18px_30px_rgba(0,0,0,0.24)]"
+          className="pointer-events-auto overflow-hidden border border-[rgba(255,70,85,0.34)] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_2rem),linear-gradient(135deg,rgba(255,70,85,0.2),transparent_38%),rgba(10,16,23,0.94)] shadow-[0_20px_34px_rgba(0,0,0,0.34)] backdrop-blur-[10px]"
           role="alert"
           style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}
         >
@@ -56,14 +56,14 @@ export function StatusToasts({
             <div className="min-w-0">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2 w-2 rotate-45 bg-[var(--bg-accent)]" />
-                <div className="font-display text-[0.82rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-accent)]">
+                <div className="font-display text-[0.9rem] font-bold uppercase tracking-[0.18em] text-[#ffd0cb]">
                   Protocol Error
                 </div>
               </div>
-              <div className="text-sm leading-6 text-[var(--text-primary)]">{error}</div>
+              <div className="text-[0.98rem] font-medium leading-7 text-[#fff4f1]">{error}</div>
             </div>
             <button
-              className="self-start shrink-0 border border-[rgba(255,243,224,0.1)] bg-[var(--bg-panel-lowest)] px-3 py-2 font-display text-[0.82rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] transition hover:border-[rgba(255,70,85,0.35)] hover:text-white"
+              className="self-start shrink-0 border border-[rgba(255,70,85,0.24)] bg-[rgba(8,12,18,0.92)] px-3 py-2 font-display text-[0.82rem] font-bold uppercase tracking-[0.14em] text-[#ffe4df] transition hover:border-[rgba(255,70,85,0.42)] hover:text-white"
               onClick={onErrorDismiss}
               type="button"
               style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
@@ -77,7 +77,7 @@ export function StatusToasts({
       {success ? (
         <div
           aria-live="polite"
-          className="pointer-events-auto overflow-hidden border border-[rgba(104,210,174,0.22)] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_2rem),linear-gradient(135deg,rgba(104,210,174,0.08),transparent_34%),var(--bg-panel)] shadow-[0_18px_30px_rgba(0,0,0,0.22)]"
+          className="pointer-events-auto overflow-hidden border border-[rgba(104,210,174,0.32)] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_2rem),linear-gradient(135deg,rgba(104,210,174,0.18),transparent_38%),rgba(10,16,23,0.94)] shadow-[0_20px_34px_rgba(0,0,0,0.32)] backdrop-blur-[10px]"
           role="status"
           style={{ clipPath: "polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 12px 100%, 0 calc(100% - 12px))" }}
         >
@@ -86,14 +86,14 @@ export function StatusToasts({
             <div className="min-w-0">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2 w-2 rotate-45 bg-[var(--success)]" />
-                <div className="font-display text-[0.82rem] font-semibold uppercase tracking-[0.18em] text-[var(--success)]">
+                <div className="font-display text-[0.9rem] font-bold uppercase tracking-[0.18em] text-[#9ff0d3]">
                   Update Saved
                 </div>
               </div>
-              <div className="text-sm leading-6 text-[var(--text-primary)]">{success}</div>
+              <div className="text-[0.98rem] font-medium leading-7 text-[#f3fff9]">{success}</div>
             </div>
             <button
-              className="self-start shrink-0 border border-[rgba(255,243,224,0.1)] bg-[var(--bg-panel-lowest)] px-3 py-2 font-display text-[0.82rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] transition hover:border-[rgba(96,220,176,0.35)] hover:text-white"
+              className="self-start shrink-0 border border-[rgba(104,210,174,0.24)] bg-[rgba(8,12,18,0.92)] px-3 py-2 font-display text-[0.82rem] font-bold uppercase tracking-[0.14em] text-[#dcfff2] transition hover:border-[rgba(96,220,176,0.42)] hover:text-white"
               onClick={onSuccessDismiss}
               type="button"
               style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}

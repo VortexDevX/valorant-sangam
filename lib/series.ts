@@ -77,6 +77,12 @@ export function deriveSeriesStatus(
   return "veto_in_progress";
 }
 
+export function canSwapSeriesSides(
+  series: Pick<SeriesRecord, "locked" | "veto" | "results">,
+) {
+  return !series.locked && series.veto === null && series.results.length === 0;
+}
+
 function serializeVetoAction(action: Record<string, unknown>): VetoActionRecord {
   return {
     step: Number(action.step),
@@ -194,6 +200,16 @@ export function serializeSeries(series: Record<string, unknown>): SeriesRecord {
             match: Number((series.bracket as Record<string, unknown>).match),
           }
         : null,
+    manualContinuation:
+      typeof series.manualContinuation === "object" && series.manualContinuation
+        ? {
+            id: String((series.manualContinuation as Record<string, unknown>).id),
+            title: String((series.manualContinuation as Record<string, unknown>).title),
+            round: Number((series.manualContinuation as Record<string, unknown>).round),
+            match: Number((series.manualContinuation as Record<string, unknown>).match),
+          }
+        : null,
+    locked: Boolean(series.locked),
     format,
     veto,
     results,

@@ -57,6 +57,8 @@ export async function POST(request: Request) {
       teamASlug,
       teamBSlug,
       bracket: null,
+      manualContinuation: null,
+      locked: false,
       format: parsed.data.format,
       veto: null,
       results: [],

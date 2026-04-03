@@ -65,6 +65,10 @@ export function AdminSeriesHub() {
   const { token } = useAdminSession();
   const [series, setSeries] = useState<SeriesRecord[]>([]);
   const [formValue, setFormValue] = useState(initialForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "open" | "completed" | "bracket" | "manual" | "locked"
+  >("all");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -160,7 +164,47 @@ export function AdminSeriesHub() {
     }
   }
 
-  const orderedSeries = useMemo(() => [...series].sort(compareSeries), [series]);
+  const orderedSeries = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return [...series]
+      .sort(compareSeries)
+      .filter((entry) => {
+        if (statusFilter === "open" && entry.status === "completed") {
+          return false;
+        }
+
+        if (statusFilter === "completed" && entry.status !== "completed") {
+          return false;
+        }
+
+        if (statusFilter === "bracket" && !entry.bracket) {
+          return false;
+        }
+
+        if (statusFilter === "manual" && entry.bracket) {
+          return false;
+        }
+
+        if (statusFilter === "locked" && !entry.locked) {
+          return false;
+        }
+
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        return [
+          entry.teamA,
+          entry.teamB,
+          entry.pairKey,
+          entry.bracket?.title ?? "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery);
+      });
+  }, [searchQuery, series, statusFilter]);
   const upcoming = orderedSeries.filter((entry) => entry.status !== "completed");
   const completed = orderedSeries.filter((entry) => entry.status === "completed");
 
@@ -252,6 +296,53 @@ export function AdminSeriesHub() {
         </form>
 
         <div className="space-y-8">
+          <section className="panel px-6 py-5 md:px-8">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div>
+                <label className="label" htmlFor="series-search">
+                  Search Series
+                </label>
+                <div className="tactical-input-wrap">
+                  <input
+                    id="series-search"
+                    className="field"
+                    placeholder="TEAM, PAIR, OR BRACKET"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label" htmlFor="series-status-filter">
+                  Filter
+                </label>
+                <select
+                  id="series-status-filter"
+                  className="select"
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(
+                      event.target.value as
+                        | "all"
+                        | "open"
+                        | "completed"
+                        | "bracket"
+                        | "manual"
+                        | "locked",
+                    )
+                  }
+                >
+                  <option value="all">All Series</option>
+                  <option value="open">Open Only</option>
+                  <option value="completed">Completed</option>
+                  <option value="bracket">Bracket Linked</option>
+                  <option value="manual">Manual Only</option>
+                  <option value="locked">Locked</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
           <section className="space-y-4">
             <div className="flex items-end justify-between gap-4">
               <h2 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
@@ -288,6 +379,11 @@ export function AdminSeriesHub() {
                               Manual series
                             </span>
                           )}
+                          {entry.locked ? (
+                            <span className="tactical-chip text-[var(--danger)]">
+                              locked
+                            </span>
+                          ) : null}
                         </div>
 
                         <div className="panel-soft grid items-center gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)] md:px-5">
@@ -368,6 +464,11 @@ export function AdminSeriesHub() {
                           {entry.bracket ? (
                             <span className="tactical-chip text-[var(--text-secondary)]">
                               {createBracketSeriesSummary(entry)}
+                            </span>
+                          ) : null}
+                          {entry.locked ? (
+                            <span className="tactical-chip text-[var(--danger)]">
+                              locked
                             </span>
                           ) : null}
                           <span className="mono text-sm text-[var(--text-primary)]">

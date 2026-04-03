@@ -6,8 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
 import { VetoBoard } from "@/components/veto-board";
+import { downloadSeriesResultCard } from "@/lib/export-cards";
 import { MAPS } from "@/lib/map-pool";
-import { createBracketSeriesSummary, getNextSeriesMap } from "@/lib/series";
+import {
+  canSwapSeriesSides,
+  createBracketSeriesSummary,
+  getNextSeriesMap,
+} from "@/lib/series";
 import { deriveVetoState } from "@/lib/veto-engine";
 import type { MapId } from "@/lib/map-pool";
 import type { SeriesRecord } from "@/types/series";
@@ -123,7 +128,7 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
     }
   }
 
-  async function applyVetoAction(action: { map?: MapId; side?: StartingSide; undo?: boolean }) {
+  async function applyVetoAction(action: { map?: MapId; side?: StartingSide }) {
     if (!series) {
       return;
     }
@@ -148,13 +153,75 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
       }
 
       setSeries(payload.series);
-      if (action.undo) {
-        setMessage("Last veto action removed.");
-      } else {
-        setMessage(payload.series.veto?.status === "completed" ? "Veto complete." : "Veto step saved.");
-      }
+      setMessage(payload.series.veto?.status === "completed" ? "Veto complete." : "Veto step saved.");
     } catch (applyError) {
       setError(applyError instanceof Error ? applyError.message : "Failed to update veto.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function swapSides() {
+    if (!series) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage(null);
+
+      const response = await fetch(`/api/series/${series._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: "swap_sides" }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to swap series sides.");
+      }
+
+      setSeries(payload.series);
+      setMessage("Team A and Team B swapped.");
+    } catch (swapError) {
+      setError(swapError instanceof Error ? swapError.message : "Failed to swap series sides.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setSeriesLock(locked: boolean) {
+    if (!series) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage(null);
+
+      const response = await fetch(`/api/series/${series._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: "set_lock", locked }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to update series lock.");
+      }
+
+      setSeries(payload.series);
+      setMessage(locked ? "Series locked." : "Series unlocked.");
+    } catch (lockError) {
+      setError(lockError instanceof Error ? lockError.message : "Failed to update series lock.");
     } finally {
       setBusy(false);
     }
@@ -295,6 +362,7 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
           mapPool: series.veto.mapPool,
           actions: series.veto.actions,
         });
+  const canUseCoinTossSetup = canSwapSeriesSides(series);
 
   return (
     <div className="space-y-8">
@@ -330,14 +398,86 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
             <span className="tactical-chip text-[var(--success)]">
               {series.overallScore.teamA}-{series.overallScore.teamB}
             </span>
+            {series.locked ? (
+              <span className="tactical-chip text-[var(--danger)]">locked</span>
+            ) : null}
             {series.bracket ? (
               <span className="tactical-chip text-[var(--text-secondary)]">
                 {createBracketSeriesSummary(series)}
               </span>
             ) : null}
+            <button
+              className="button-secondary"
+              disabled={busy}
+              onClick={() => void setSeriesLock(!series.locked)}
+              type="button"
+            >
+              {series.locked ? "Unlock Series" : "Lock Series"}
+            </button>
+            {series.status === "completed" ? (
+              <button
+                className="button-secondary"
+                onClick={() => downloadSeriesResultCard(series)}
+                type="button"
+              >
+                Export Result Card
+              </button>
+            ) : null}
           </div>
         </div>
       </section>
+
+      {canUseCoinTossSetup ? (
+        <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="eyebrow">Coin Toss</p>
+              <h2 className="mt-2 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                Set Team A Before Veto
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+                The toss winner becomes Team A for veto and side-flow purposes. Once veto starts,
+                this setup locks and the matchup order can no longer be swapped.
+              </p>
+            </div>
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              Current A: {series.teamA}
+            </span>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <button
+              className="panel-soft text-left px-5 py-5 transition hover:-translate-y-0.5"
+              disabled={busy}
+              onClick={() => setMessage(`${series.teamA} stays as Team A.`)}
+              type="button"
+            >
+              <div className="eyebrow">Keep Current Side</div>
+              <div className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                {series.teamA}
+              </div>
+              <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
+                Use this if the current Team A already won the toss.
+              </p>
+            </button>
+
+            <button
+              className="panel-soft text-left px-5 py-5 transition hover:-translate-y-0.5"
+              disabled={busy}
+              onClick={() => void swapSides()}
+              type="button"
+            >
+              <div className="eyebrow">Swap Into Team A</div>
+              <div className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                {series.teamB}
+              </div>
+              <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
+                Use this if the current Team B won the toss and should become Team A.
+              </p>
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       {!series.veto ? (
         <section className="space-y-6">

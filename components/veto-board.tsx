@@ -15,7 +15,7 @@ interface VetoBoardProps {
   session: VetoSessionRecord;
   derived: DerivedVetoState;
   busy: boolean;
-  onApply: (payload: { map?: MapId; side?: StartingSide; undo?: boolean }) => Promise<void>;
+  onApply: (payload: { map?: MapId; side?: StartingSide }) => Promise<void>;
 }
 
 function MapPreview({ alt, src }: { alt: string; src: string }) {
@@ -132,7 +132,6 @@ export function VetoBoard({
   const nextStep = derived.nextStep;
   const instruction = buildInstruction(session, nextStep, derived);
   const canChooseMap = nextStep?.type === "ban" || nextStep?.type === "pick";
-  const latestAction = session.actions[session.actions.length - 1];
   const sideTargetMap =
     nextStep?.type === "side"
       ? derived.result.maps.find((map) => map.order === nextStep.order)
@@ -171,14 +170,6 @@ export function VetoBoard({
               const mapMeta = MAP_LOOKUP[mapId];
               const state = mapState(mapMeta.id, derived);
               const isSideTarget = sideTargetMap?.map === mapMeta.id;
-              const canUndoMap =
-                !busy &&
-                !isSideTarget &&
-                !!latestAction?.map &&
-                latestAction.map === mapMeta.id &&
-                (latestAction.type === "ban" ||
-                  latestAction.type === "pick" ||
-                  latestAction.type === "decider");
               const clickable =
                 canChooseMap &&
                 state === "available" &&
@@ -189,7 +180,7 @@ export function VetoBoard({
                 derived.availableMaps.length === 1 &&
                 derived.availableMaps[0] === mapMeta.id;
               const tileClasses = `group relative overflow-hidden text-left ${
-                clickable || canUndoMap ? "cursor-crosshair" : "cursor-default"
+                clickable ? "cursor-crosshair" : "cursor-default"
               }`;
               const tileBody = (
                 <div
@@ -300,19 +291,6 @@ export function VetoBoard({
                 );
               }
 
-              if (canUndoMap) {
-                return (
-                  <button
-                    key={mapMeta.id}
-                    className={tileClasses}
-                    onClick={() => onApply({ undo: true })}
-                    type="button"
-                  >
-                    {tileBody}
-                  </button>
-                );
-              }
-
               return (
                 <div key={mapMeta.id} className={tileClasses}>
                   {tileBody}
@@ -321,7 +299,7 @@ export function VetoBoard({
             })}
           </div>
 
-          {nextStep?.type === "decider" || session.actions.length > 0 ? (
+          {nextStep?.type === "decider" ? (
             <div className="flex flex-wrap justify-start gap-3">
               <button
                 className="button-primary"
@@ -330,14 +308,6 @@ export function VetoBoard({
                 type="button"
               >
                 {busy ? "Saving..." : "Confirm Decider"}
-              </button>
-              <button
-                className="button-secondary"
-                disabled={busy || session.actions.length === 0}
-                onClick={() => onApply({ undo: true })}
-                type="button"
-              >
-                Undo Last Action
               </button>
             </div>
           ) : null}

@@ -53,6 +53,13 @@ export interface SeriesBracketLink {
   match: number;
 }
 
+export interface SeriesManualContinuationLink {
+  id: string;
+  title: string;
+  round: number;
+  match: number;
+}
+
 export interface SeriesRecord {
   _id: string;
   pairKey: string;
@@ -61,6 +68,8 @@ export interface SeriesRecord {
   teamASlug: string;
   teamBSlug: string;
   bracket: SeriesBracketLink | null;
+  manualContinuation: SeriesManualContinuationLink | null;
+  locked: boolean;
   format: SeriesFormat;
   status: SeriesStatus;
   veto: SeriesVetoState | null;

@@ -1,5 +1,6 @@
 import { normalizeTeamName, slugifyTeamName } from "@/lib/series";
 import type {
+  BracketContinuationResolution,
   BracketMatchRecord,
   BracketRecord,
   BracketRoundRecord,
@@ -27,6 +28,7 @@ interface SeriesResolution {
   seriesId: string;
   winnerSeed: number;
   scoreline: string;
+  winnerSource: "series" | "continuation";
 }
 
 function toPositivePowerOfTwo(value: number) {
@@ -157,6 +159,10 @@ function buildLinkedSeriesMap(series: SeriesRecord[]) {
   return grouped;
 }
 
+function buildContinuationMap(resolutions: BracketContinuationResolution[]) {
+  return new Map(resolutions.map((entry) => [`${entry.round}-${entry.match}`, entry]));
+}
+
 function resolveSeriesOutcome(
   linkedSeries: SeriesRecord | undefined,
   top: BracketSlotRecord | null,
@@ -184,6 +190,7 @@ function resolveSeriesOutcome(
       seriesId: linkedSeries._id,
       winnerSeed: top.seed,
       scoreline: `${linkedSeries.overallScore.teamA}-${linkedSeries.overallScore.teamB}`,
+      winnerSource: "series",
     };
   }
 
@@ -192,6 +199,7 @@ function resolveSeriesOutcome(
       seriesId: linkedSeries._id,
       winnerSeed: bottom.seed,
       scoreline: `${linkedSeries.overallScore.teamA}-${linkedSeries.overallScore.teamB}`,
+      winnerSource: "series",
     };
   }
 
@@ -203,6 +211,7 @@ export function computeBracketView(input: {
   bracketSize: number;
   teams: BracketSeedRecord[];
   winners: BracketWinnerSelection[];
+  manualResolutions: BracketContinuationResolution[];
   linkedSeries?: SeriesRecord[];
 }): BracketComputation {
   const readyTeams = input.teams
@@ -226,6 +235,7 @@ export function computeBracketView(input: {
 
   const totalRounds = Math.log2(input.bracketSize);
   const winnerMap = buildWinnerMap(input.winners);
+  const continuationMap = buildContinuationMap(input.manualResolutions);
   const linkedSeriesMap = buildLinkedSeriesMap(input.linkedSeries ?? []);
   const seedOrder = buildSeedOrder(input.bracketSize);
   const competitorsBySeed = new Map<number, Competitor>(
@@ -273,26 +283,37 @@ export function computeBracketView(input: {
         autoWinner === null
           ? resolveSeriesOutcome(linkedSeries, top, bottom)
           : null;
+      const continuationResolution =
+        autoWinner === null && seriesResolution === null
+          ? continuationMap.get(`${round}-${matchNumber}`) ?? null
+          : null;
       const seriesWinner =
         seriesResolution === null
           ? null
           : availableCompetitors.find((entry) => entry.seed === seriesResolution.winnerSeed) ?? null;
+      const continuationWinner =
+        continuationResolution === null
+          ? null
+          : availableCompetitors.find((entry) => entry.seed === continuationResolution.winnerSeed) ??
+            null;
       const storedWinnerSeed = winnerMap.get(`${round}-${matchNumber}`) ?? null;
       const manualWinner =
-        autoWinner === null && seriesWinner === null
+        autoWinner === null && seriesWinner === null && continuationWinner === null
           ? availableCompetitors.find((entry) => entry.seed === storedWinnerSeed) ?? null
           : null;
-      const winner = autoWinner ?? seriesWinner ?? manualWinner ?? null;
+      const winner = autoWinner ?? seriesWinner ?? continuationWinner ?? manualWinner ?? null;
       const winnerSource =
         autoWinner !== null
           ? "auto"
           : seriesWinner !== null
             ? "series"
+            : continuationWinner !== null
+              ? "continuation"
             : manualWinner !== null
               ? "manual"
               : null;
 
-      if (seriesWinner || manualWinner) {
+      if (seriesWinner || continuationWinner || manualWinner) {
         hasManualProgress = true;
       }
 
@@ -308,8 +329,8 @@ export function computeBracketView(input: {
         winnerSeed: winner?.seed ?? null,
         winnerName: winner?.name ?? null,
         winnerSource,
-        seriesId: linkedSeries?._id ?? null,
-        seriesScore: seriesResolution?.scoreline ?? null,
+        seriesId: seriesResolution?.seriesId ?? continuationResolution?.seriesId ?? linkedSeries?._id ?? null,
+        seriesScore: seriesResolution?.scoreline ?? continuationResolution?.scoreline ?? null,
         autoAdvanced: autoWinner !== null,
         canPickWinner:
           autoWinner === null &&
@@ -380,11 +401,59 @@ export function serializeBracket(
         })
         .filter((entry): entry is BracketWinnerSelection => entry !== null)
     : [];
+  const manualResolutions = Array.isArray(source.manualResolutions)
+    ? (source.manualResolutions as unknown[])
+        .map((entry) => {
+          const typedEntry = entry as Record<string, unknown>;
+          const round = Number(typedEntry.round);
+          const match = Number(typedEntry.match);
+          const winnerSeed = Number(typedEntry.winnerSeed);
+          const seriesId = String(typedEntry.seriesId ?? "");
+          const scoreline = String(typedEntry.scoreline ?? "");
+          const winnerName = normalizeTeamName(String(typedEntry.winnerName ?? ""));
+          const note = String(typedEntry.note ?? "");
+          const resolvedAt =
+            typedEntry.resolvedAt instanceof Date
+              ? typedEntry.resolvedAt.toISOString()
+              : typedEntry.resolvedAt
+                ? String(typedEntry.resolvedAt)
+                : undefined;
+
+          if (
+            !Number.isInteger(round) ||
+            !Number.isInteger(match) ||
+            !Number.isInteger(winnerSeed) ||
+            !seriesId ||
+            !scoreline ||
+            !winnerName
+          ) {
+            return null;
+          }
+
+          const resolution: BracketContinuationResolution = {
+            round,
+            match,
+            seriesId,
+            winnerSeed,
+            scoreline,
+            winnerName,
+            note,
+          };
+
+          if (resolvedAt) {
+            resolution.resolvedAt = resolvedAt;
+          }
+
+          return resolution;
+        })
+        .filter((entry): entry is BracketContinuationResolution => entry !== null)
+    : [];
   const computed = computeBracketView({
     teamCount,
     bracketSize,
     teams,
     winners,
+    manualResolutions,
     linkedSeries: options?.linkedSeries,
   });
 
@@ -398,8 +467,10 @@ export function serializeBracket(
       source.format === "bo1" || source.format === "bo5"
         ? source.format
         : "bo3",
+    locked: Boolean(source.locked),
     teams,
     winners,
+    manualResolutions,
     rounds: computed.rounds,
     status: computed.status,
     championSeed: computed.championSeed,

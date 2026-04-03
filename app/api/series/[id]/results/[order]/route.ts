@@ -67,6 +67,14 @@ export async function PATCH(
     }
 
     const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+
+    if (serialized.locked) {
+      return Response.json(
+        { error: "This series is locked. Unlock it before editing results." },
+        { status: 409 },
+      );
+    }
+
     const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
 
     if (!existingResult) {
@@ -144,6 +152,14 @@ export async function DELETE(
     }
 
     const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+
+    if (serialized.locked) {
+      return Response.json(
+        { error: "This series is locked. Unlock it before changing results." },
+        { status: 409 },
+      );
+    }
+
     const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
 
     if (!existingResult) {

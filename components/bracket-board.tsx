@@ -11,6 +11,7 @@ interface BracketBoardProps {
   bracket: BracketRecord;
   busy?: boolean;
   editable?: boolean;
+  exportId?: string;
   onEditTeamName?: (seed: number, name: string) => void;
   onPickWinner?: (round: number, match: number, winnerSeed: number | null) => Promise<void> | void;
 }
@@ -29,7 +30,7 @@ type TournamentMatch = BaseMatch & {
   metaRound: number;
   metaMatch: number;
   winnerSeed: number | null;
-  winnerSource: "auto" | "series" | "manual" | null;
+  winnerSource: "auto" | "series" | "continuation" | "manual" | null;
   seriesId: string | null;
   seriesScore: string | null;
   autoAdvanced: boolean;
@@ -197,6 +198,8 @@ function BracketMatchCard({
     ? "Auto Advance"
     : typedMatch.winnerSource === "series"
       ? "Series Result"
+      : typedMatch.winnerSource === "continuation"
+        ? "Continuation"
       : typedMatch.seriesId
         ? "Linked Series"
         : typedMatch.winnerSeed
@@ -437,6 +440,21 @@ function BracketMatchCard({
               ? `${winnerName} advanced from the linked series (${typedMatch.seriesScore}).`
               : `${winnerName} advanced from the linked series result.`}
           </span>
+        ) : typedMatch.winnerSource === "continuation" && winnerName ? (
+          <span
+            style={{
+              color: "#ffe0ab",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.62rem",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            {typedMatch.seriesScore
+              ? `${winnerName} advanced from a manual continuation series (${typedMatch.seriesScore}).`
+              : `${winnerName} advanced from a manual continuation series.`}
+          </span>
         ) : typedMatch.seriesId ? (
           <span
             style={{
@@ -507,13 +525,14 @@ export function BracketBoard({
   bracket,
   busy = false,
   editable = false,
+  exportId,
   onPickWinner,
 }: BracketBoardProps) {
   const matches = useMemo(() => toTournamentMatches(bracket), [bracket]);
 
   if (bracket.rounds.length === 0) {
     return (
-      <section className="bracket-engine-frame">
+      <section className="bracket-engine-frame" id={exportId}>
         <div className="bracket-engine-header">
           <div>
             <p className="eyebrow">Bracket Board</p>
@@ -543,7 +562,7 @@ export function BracketBoard({
   }
 
   return (
-    <section className="bracket-engine-frame">
+    <section className="bracket-engine-frame" id={exportId}>
       <div className="bracket-engine-header">
         <div>
           <p className="eyebrow">Bracket Board</p>

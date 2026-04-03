@@ -3,15 +3,23 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BracketBoard } from "@/components/bracket-board";
+import {
+  downloadBracketCard,
+  downloadRenderedBracketPng,
+} from "@/lib/export-cards";
 import { useAdminSession } from "@/components/admin-session";
 import { StatusToasts } from "@/components/status-toasts";
 import { buildSeedOrder, computeBracketView, normalizeBracketTeams } from "@/lib/brackets";
+import { buildPairKey } from "@/lib/series";
 import type { BracketRecord } from "@/types/bracket";
+import type { SeriesRecord } from "@/types/series";
 import type { SeriesFormat } from "@/types/veto";
 
 interface AdminBracketWorkspaceProps {
   bracketId: string;
 }
+
+const ADMIN_BRACKET_EXPORT_ID = "admin-bracket-export";
 
 export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps) {
   const { token } = useAdminSession();
@@ -19,6 +27,9 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
   const [title, setTitle] = useState("");
   const [format, setFormat] = useState<SeriesFormat>("bo3");
   const [teams, setTeams] = useState<string[]>([]);
+  const [series, setSeries] = useState<SeriesRecord[]>([]);
+  const [continuationSelection, setContinuationSelection] = useState<Record<string, string>>({});
+  const [continuationNotes, setContinuationNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -31,17 +42,48 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/brackets/${bracketId}`, { cache: "no-store" });
-        const payload = await response.json();
+        const [bracketResponse, seriesResponse] = await Promise.all([
+          fetch(`/api/brackets/${bracketId}`, { cache: "no-store" }),
+          fetch("/api/series", { cache: "no-store" }),
+        ]);
+        const [bracketPayload, seriesPayload] = await Promise.all([
+          bracketResponse.json(),
+          seriesResponse.json(),
+        ]);
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Failed to load bracket.");
+        if (!bracketResponse.ok) {
+          throw new Error(bracketPayload.error ?? "Failed to load bracket.");
         }
 
-        setBracket(payload.bracket);
-        setTitle(payload.bracket.title);
-        setFormat(payload.bracket.format);
-        setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
+        if (!seriesResponse.ok) {
+          throw new Error(seriesPayload.error ?? "Failed to load series.");
+        }
+
+        setBracket(bracketPayload.bracket);
+        setTitle(bracketPayload.bracket.title);
+        setFormat(bracketPayload.bracket.format);
+        setTeams(bracketPayload.bracket.teams.map((entry: { name: string }) => entry.name));
+        setSeries(seriesPayload.series);
+        setContinuationSelection(
+          Object.fromEntries(
+            (bracketPayload.bracket.manualResolutions ?? []).map(
+              (entry: { round: number; match: number; seriesId: string }) => [
+                `${entry.round}-${entry.match}`,
+                entry.seriesId,
+              ],
+            ),
+          ),
+        );
+        setContinuationNotes(
+          Object.fromEntries(
+            (bracketPayload.bracket.manualResolutions ?? []).map(
+              (entry: { round: number; match: number; note?: string }) => [
+                `${entry.round}-${entry.match}`,
+                entry.note ?? "",
+              ],
+            ),
+          ),
+        );
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Failed to load bracket.");
       } finally {
@@ -73,6 +115,7 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
       bracketSize: bracket.bracketSize,
       teams: normalizedTeams,
       winners: bracket.winners,
+      manualResolutions: bracket.manualResolutions,
     });
 
     return {
@@ -125,6 +168,57 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
 
     return pairs;
   }, [previewBracket, teams]);
+  const continuationMatches = useMemo(() => {
+    if (!previewBracket) {
+      return [];
+    }
+
+    return previewBracket.rounds
+      .flatMap((round) => round.matches)
+      .map((match) => {
+        const linkedMatchSeries = series.find(
+          (entry) =>
+            entry.bracket?.id === previewBracket._id &&
+            entry.bracket.round === match.round &&
+            entry.bracket.match === match.match,
+        );
+        const key = `${match.round}-${match.match}`;
+        const pairKey =
+          match.top?.slug && match.bottom?.slug
+            ? buildPairKey(match.top.slug, match.bottom.slug)
+            : null;
+        const compatibleSeries =
+          pairKey === null
+            ? []
+            : series.filter(
+                (entry) =>
+                  !entry.bracket &&
+                  entry.status === "completed" &&
+                  entry.pairKey === pairKey,
+              );
+        const activeResolution =
+          previewBracket.manualResolutions.find(
+            (entry) => entry.round === match.round && entry.match === match.match,
+          ) ?? null;
+
+        return {
+          key,
+          match,
+          linkedMatchSeries,
+          compatibleSeries,
+          activeResolution,
+        };
+      })
+      .filter(
+        (entry) =>
+          !!entry.linkedMatchSeries &&
+          !entry.linkedMatchSeries.overallScore.completed &&
+          entry.match.top &&
+          entry.match.bottom &&
+          !entry.match.autoAdvanced &&
+          (entry.activeResolution !== null || entry.compatibleSeries.length > 0),
+      );
+  }, [previewBracket, series]);
 
   async function saveDetails(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -198,6 +292,131 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
     );
   }
 
+  async function resolveFromContinuation(round: number, match: number, continuationSeriesId: string | null) {
+    try {
+      setBusy(true);
+      setMessage(null);
+      setError(null);
+
+      const response = await fetch(`/api/brackets/${bracketId}/matches/${round}/${match}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          continuationSeriesId,
+          note: continuationNotes[`${round}-${match}`] ?? "",
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to resolve continuation.");
+      }
+
+      setBracket(payload.bracket);
+      setTitle(payload.bracket.title);
+      setFormat(payload.bracket.format);
+      setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
+      setContinuationSelection((current) => ({
+        ...current,
+        [`${round}-${match}`]: continuationSeriesId ?? "",
+      }));
+      setContinuationNotes((current) => ({
+        ...current,
+        [`${round}-${match}`]:
+          payload.bracket.manualResolutions.find(
+            (entry: { round: number; match: number; note?: string }) =>
+              entry.round === round && entry.match === match,
+          )?.note ?? current[`${round}-${match}`] ?? "",
+      }));
+      setSeries((current) =>
+        current.map((entry) => {
+          const existingContinuation = entry.manualContinuation;
+
+          if (entry._id === continuationSeriesId && continuationSeriesId !== null) {
+            return {
+              ...entry,
+              manualContinuation: {
+                id: payload.bracket._id,
+                title: payload.bracket.title,
+                round,
+                match,
+              },
+            };
+          }
+
+          if (
+            existingContinuation &&
+            existingContinuation.id === payload.bracket._id &&
+            existingContinuation.round === round &&
+            existingContinuation.match === match &&
+            entry._id !== continuationSeriesId
+          ) {
+            return { ...entry, manualContinuation: null };
+          }
+
+          return entry;
+        }),
+      );
+      setMessage(
+        continuationSeriesId
+          ? "Bracket match resolved from manual continuation."
+          : "Manual continuation cleared.",
+      );
+    } catch (resolveError) {
+      setError(resolveError instanceof Error ? resolveError.message : "Failed to resolve continuation.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setBracketLock(locked: boolean) {
+    try {
+      setBusy(true);
+      setMessage(null);
+      setError(null);
+
+      const response = await fetch(`/api/brackets/${bracketId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ locked }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to update bracket freeze.");
+      }
+
+      setBracket(payload.bracket);
+      setTitle(payload.bracket.title);
+      setFormat(payload.bracket.format);
+      setTeams(payload.bracket.teams.map((entry: { name: string }) => entry.name));
+      setMessage(locked ? "Bracket frozen." : "Bracket unfrozen.");
+    } catch (lockError) {
+      setError(lockError instanceof Error ? lockError.message : "Failed to update bracket freeze.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyPublicBracketLink() {
+    if (!previewBracket) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/brackets/${previewBracket._id}`);
+      setMessage("Public bracket link copied.");
+    } catch {
+      setError("Failed to copy public bracket link.");
+    }
+  }
+
   if (loading) {
     return <div className="status-info">Loading bracket workspace...</div>;
   }
@@ -236,6 +455,9 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
             <span className="tactical-chip text-[var(--text-secondary)]">
               {previewBracket.format}
             </span>
+            {previewBracket.locked ? (
+              <span className="tactical-chip text-[var(--danger)]">frozen</span>
+            ) : null}
             {previewBracket.championName ? (
               <span className="tactical-chip text-[var(--success)]">
                 {previewBracket.championName}
@@ -263,6 +485,15 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
                 {busy ? "Saving..." : "Save Bracket"}
               </button>
 
+              <button
+                className="button-secondary sm:min-w-56"
+                disabled={busy}
+                onClick={() => void setBracketLock(!previewBracket.locked)}
+                type="button"
+              >
+                {previewBracket.locked ? "Unfreeze Bracket" : "Freeze Bracket"}
+              </button>
+
               <Link className="button-secondary sm:min-w-56" href="/admin">
                 Open Series Hub
               </Link>
@@ -271,6 +502,40 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
                 Open Public Bracket
               </Link>
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="button-secondary"
+              onClick={() => {
+                void downloadRenderedBracketPng(
+                  previewBracket,
+                  `${previewBracket.slug || "bracket"}-board.png`,
+                );
+              }}
+              type="button"
+            >
+              Download Bracket PNG
+            </button>
+            <button
+              className="button-secondary"
+              onClick={() =>
+                downloadBracketCard(
+                  previewBracket,
+                  previewBracket.championName ? "champion" : "summary",
+                )
+              }
+              type="button"
+            >
+              Download Champion Card
+            </button>
+            <button
+              className="button-secondary"
+              onClick={() => void copyPublicBracketLink()}
+              type="button"
+            >
+              Copy Public Link
+            </button>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
@@ -373,8 +638,220 @@ export function AdminBracketWorkspace({ bracketId }: AdminBracketWorkspaceProps)
           bracket={previewBracket}
           busy={busy}
           editable={!hasUnsavedChanges && setupComplete}
+          exportId={ADMIN_BRACKET_EXPORT_ID}
           onPickWinner={!hasUnsavedChanges && setupComplete ? pickWinner : undefined}
         />
+
+        {!hasUnsavedChanges && setupComplete ? (
+          <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow">Manual Continuation</p>
+                <h3 className="mt-2 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                  Resolve Bracket From External Series
+                </h3>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-secondary)]">
+                  Use this only when a bracket-linked match had to be finished in a separate manual series.
+                  The linked bracket series stays as the scheduled shell, and the external completed series decides who advances.
+                </p>
+              </div>
+              <span className="tactical-chip text-[var(--text-secondary)]">
+                {continuationMatches.length} eligible
+              </span>
+            </div>
+
+            {continuationMatches.length === 0 ? (
+              <div className="status-info">
+                No bracket matches currently need manual continuation resolution.
+              </div>
+            ) : (
+              <div className="grid gap-4 xl:grid-cols-2">
+                {continuationMatches.map(({ key, match, linkedMatchSeries, compatibleSeries, activeResolution }) => (
+                  <article key={key} className="panel-soft space-y-4 px-5 py-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="tactical-chip text-[var(--text-accent)]">
+                        Round {match.round}
+                      </span>
+                      <span className="tactical-chip text-[var(--text-secondary)]">
+                        Match {match.match}
+                      </span>
+                      {match.winnerSource === "continuation" ? (
+                        <span className="tactical-chip text-[var(--success)]">
+                          Continuation applied
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="panel-soft grid items-center gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)]">
+                      <div className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em] md:justify-self-end md:text-right">
+                        {match.top?.name || "TBD"}
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-white/10 bg-[var(--bg-panel-high)] font-display text-sm font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        VS
+                      </div>
+                      <div className="min-w-0 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                        {match.bottom?.name || "TBD"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-[var(--text-secondary)]">
+                      <div>
+                        Linked series:
+                        {" "}
+                        <span className="text-[var(--text-primary)]">
+                          {linkedMatchSeries?.teamA} vs {linkedMatchSeries?.teamB}
+                        </span>
+                      </div>
+                      <div>
+                        Status:
+                        {" "}
+                        <span className="text-[var(--text-primary)]">
+                          {linkedMatchSeries?.status.replaceAll("_", " ")}
+                        </span>
+                      </div>
+                      {activeResolution ? (
+                        <div>
+                          Current continuation:
+                          {" "}
+                          <span className="text-[var(--success)]">
+                            {activeResolution.winnerName} ({activeResolution.scoreline})
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                      <div>
+                        <label className="label" htmlFor={`continuation-${key}`}>
+                          Completed Manual Series
+                        </label>
+                        <select
+                          id={`continuation-${key}`}
+                          className="select"
+                          disabled={busy}
+                          value={continuationSelection[key] ?? activeResolution?.seriesId ?? ""}
+                          onChange={(event) =>
+                            setContinuationSelection((current) => ({
+                              ...current,
+                              [key]: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Select a completed manual series</option>
+                          {compatibleSeries.map((entry) => (
+                            <option key={entry._id} value={entry._id}>
+                              {entry.teamA} vs {entry.teamB} | {entry.overallScore.teamA}-{entry.overallScore.teamB}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <label className="label" htmlFor={`continuation-note-${key}`}>
+                          Continuation Note
+                        </label>
+                        <div className="tactical-input-wrap">
+                          <textarea
+                            id={`continuation-note-${key}`}
+                            className="textarea"
+                            disabled={busy}
+                            placeholder="Why this bracket match had to be continued outside the linked series."
+                            value={continuationNotes[key] ?? activeResolution?.note ?? ""}
+                            onChange={(event) =>
+                              setContinuationNotes((current) => ({
+                                ...current,
+                                [key]: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        className="button-primary"
+                        disabled={busy || !(continuationSelection[key] ?? activeResolution?.seriesId)}
+                        onClick={() =>
+                          void resolveFromContinuation(
+                            match.round,
+                            match.match,
+                            continuationSelection[key] ?? activeResolution?.seriesId ?? null,
+                          )
+                        }
+                        type="button"
+                      >
+                        Apply
+                      </button>
+
+                      <button
+                        className="button-secondary"
+                        disabled={busy || !activeResolution}
+                        onClick={() => void resolveFromContinuation(match.round, match.match, null)}
+                        type="button"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {previewBracket.manualResolutions.length > 0 ? (
+          <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow">Audit Trail</p>
+                <h3 className="mt-2 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                  Continuation History
+                </h3>
+              </div>
+              <span className="tactical-chip text-[var(--text-secondary)]">
+                {previewBracket.manualResolutions.length} entries
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {[...previewBracket.manualResolutions]
+                .sort((left, right) =>
+                  (right.resolvedAt ?? "").localeCompare(left.resolvedAt ?? ""),
+                )
+                .map((entry) => (
+                  <article key={`${entry.round}-${entry.match}-${entry.seriesId}`} className="panel-soft space-y-3 px-5 py-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="tactical-chip text-[var(--text-accent)]">
+                        Round {entry.round}
+                      </span>
+                      <span className="tactical-chip text-[var(--text-secondary)]">
+                        Match {entry.match}
+                      </span>
+                      <span className="tactical-chip text-[var(--success)]">
+                        {entry.winnerName}
+                      </span>
+                      <span className="tactical-chip text-[var(--text-secondary)]">
+                        {entry.scoreline}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm leading-7 text-[var(--text-secondary)]">
+                      <div>
+                        Continued via manual series{" "}
+                        <Link className="text-[var(--text-primary)] underline decoration-[rgba(255,255,255,0.18)] underline-offset-4" href={`/admin/series/${entry.seriesId}`}>
+                          {entry.seriesId}
+                        </Link>
+                      </div>
+                      {entry.note ? <div>{entry.note}</div> : null}
+                      {entry.resolvedAt ? (
+                        <div className="mono text-xs text-[var(--text-muted)]">
+                          Resolved {new Date(entry.resolvedAt).toLocaleString("en-IN")}
+                        </div>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </section>
+        ) : null}
       </form>
     </div>
   );

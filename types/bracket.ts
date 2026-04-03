@@ -14,6 +14,17 @@ export interface BracketWinnerSelection {
   winnerSeed: number | null;
 }
 
+export interface BracketContinuationResolution {
+  round: number;
+  match: number;
+  seriesId: string;
+  winnerSeed: number;
+  scoreline: string;
+  winnerName: string;
+  note: string;
+  resolvedAt?: string;
+}
+
 export interface BracketSlotRecord {
   seed: number | null;
   name: string;
@@ -28,7 +39,7 @@ export interface BracketMatchRecord {
   bottom: BracketSlotRecord | null;
   winnerSeed: number | null;
   winnerName: string | null;
-  winnerSource: "auto" | "series" | "manual" | null;
+  winnerSource: "auto" | "series" | "continuation" | "manual" | null;
   seriesId: string | null;
   seriesScore: string | null;
   autoAdvanced: boolean;
@@ -49,8 +60,10 @@ export interface BracketRecord {
   teamCount: number;
   bracketSize: number;
   format: SeriesFormat;
+  locked: boolean;
   teams: BracketSeedRecord[];
   winners: BracketWinnerSelection[];
+  manualResolutions: BracketContinuationResolution[];
   rounds: BracketRoundRecord[];
   status: BracketStatus;
   championSeed: number | null;

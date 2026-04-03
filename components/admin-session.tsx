@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminLoginForm } from "@/components/admin-login-form";
 
@@ -11,6 +11,7 @@ interface AdminSessionContextValue {
 }
 
 const AdminSessionContext = createContext<AdminSessionContextValue | null>(null);
+const ADMIN_SESSION_STORAGE_KEY = "valorant-sangam-admin-token";
 
 export function useAdminSession() {
   const value = useContext(AdminSessionContext);
@@ -28,7 +29,31 @@ export function AdminSessionLayout({
   children: React.ReactNode;
 }>) {
   const [token, setToken] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    try {
+      const storedToken = window.sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+      if (storedToken) {
+        setToken(storedToken);
+      }
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    if (token) {
+      window.sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, token);
+    } else {
+      window.sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    }
+  }, [hydrated, token]);
 
   const contextValue = useMemo<AdminSessionContextValue | null>(
     () =>
@@ -41,6 +66,37 @@ export function AdminSessionLayout({
     [token],
   );
 
+  if (!hydrated) {
+    return (
+      <main className="app-shell">
+        <header className="tactical-topbar">
+          <div className="page-wrap !py-0">
+            <div className="tactical-topbar-inner">
+              <div className="tactical-topbar-side tactical-topbar-side--left">
+                <span className="tactical-accent" />
+                <Link className="tactical-brand tactical-topbar-brand-link" href="/">
+                  Valorant Sangam
+                </Link>
+              </div>
+              <div className="tactical-topbar-navshell">
+                <nav className="tactical-topbar-nav" aria-label="Admin">
+                  <span className="tactical-topbar-navlink is-active">Admin</span>
+                </nav>
+              </div>
+              <div className="tactical-topbar-side tactical-topbar-side--right">
+                <span className="tactical-topbar-status">Loading Session</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="page-wrap">
+          <div className="status-info">Restoring admin session...</div>
+        </div>
+      </main>
+    );
+  }
+
   if (!contextValue) {
     return (
       <main className="app-shell">
@@ -49,18 +105,22 @@ export function AdminSessionLayout({
             <div className="tactical-topbar-inner">
               <div className="tactical-topbar-side tactical-topbar-side--left">
                 <span className="tactical-accent" />
-                <div className="tactical-brand tactical-topbar-brand">
-                  Admin Control
-                </div>
+                <Link className="tactical-brand tactical-topbar-brand-link" href="/">
+                  Valorant Sangam
+                </Link>
               </div>
 
-              <div className="tactical-topbar-plate">
-                <span className="tactical-topbar-plate-label">Admin</span>
+              <div className="tactical-topbar-navshell">
+                <nav className="tactical-topbar-nav" aria-label="Admin">
+                  <Link className="tactical-topbar-navlink" href="/">
+                    Home
+                  </Link>
+                  <span className="tactical-topbar-navlink is-active">Admin</span>
+                </nav>
               </div>
 
               <div className="tactical-topbar-side tactical-topbar-side--right">
-                <span className="tactical-accent tactical-accent--small" />
-                <span className="tactical-topbar-meta">Control Panel</span>
+                <span className="tactical-topbar-status">Access Gate</span>
               </div>
             </div>
           </div>
@@ -73,7 +133,8 @@ export function AdminSessionLayout({
               <h1 className="page-title">Admin Network</h1>
               <p className="page-subtitle mt-4">
                 Authenticate once per browser session. Route changes inside
-                `/admin` keep access. Refresh clears it.
+                `/admin` keep access. The session stays until this browser tab
+                closes or you log out.
               </p>
             </div>
           </section>
@@ -87,8 +148,8 @@ export function AdminSessionLayout({
                 </h2>
                 <p className="max-w-xl text-sm leading-7 text-[var(--text-secondary)]">
                   This route controls series creation, veto flow, and match
-                  result entry. Access is kept only in memory and disappears on
-                  refresh.
+                  result entry. Access is stored for this browser tab only and
+                  clears when the tab closes or you log out.
                 </p>
               </div>
             </div>
@@ -111,40 +172,50 @@ export function AdminSessionLayout({
               <div className="tactical-topbar-side tactical-topbar-side--left">
                 <span className="tactical-accent" />
                 <Link
-                  className="tactical-brand tactical-topbar-brand"
-                  href="/admin"
+                  className="tactical-brand tactical-topbar-brand-link"
+                  href="/"
                 >
-                  Admin Control
+                  Valorant Sangam
                 </Link>
               </div>
 
-              <div className="tactical-topbar-plate">
-                <span className="tactical-topbar-plate-label">
-                  {pathname.startsWith("/admin/brackets") ? "Brackets" : "Dashboard"}
-                </span>
+              <div className="tactical-topbar-navshell">
+                <nav className="tactical-topbar-nav" aria-label="Admin">
+                  <Link
+                    className={`tactical-topbar-navlink ${pathname === "/" ? "is-active" : ""}`}
+                    href="/"
+                  >
+                    Public
+                  </Link>
+                  <Link
+                    className={`tactical-topbar-navlink ${
+                      pathname === "/admin" || pathname.startsWith("/admin/series")
+                        ? "is-active"
+                        : ""
+                    }`}
+                    href="/admin"
+                  >
+                    Series
+                  </Link>
+                  <Link
+                    className={`tactical-topbar-navlink ${
+                      pathname.startsWith("/admin/brackets") ? "is-active" : ""
+                    }`}
+                    href="/admin/brackets"
+                  >
+                    Brackets
+                  </Link>
+                </nav>
               </div>
 
               <div className="tactical-topbar-side tactical-topbar-side--right">
-                <Link
-                  className={`tactical-topbar-link ${
-                    pathname === "/admin"
-                      ? "text-[var(--text-accent)]"
-                      : "text-[var(--text-muted)]"
-                  }`}
-                  href="/admin"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  className={`tactical-topbar-link ${
-                    pathname.startsWith("/admin/brackets")
-                      ? "text-[var(--text-accent)]"
-                      : "text-[var(--text-muted)]"
-                  }`}
-                  href="/admin/brackets"
-                >
-                  Brackets
-                </Link>
+                <span className="tactical-topbar-status">
+                  {pathname.startsWith("/admin/brackets")
+                    ? "Bracket Control"
+                    : pathname.startsWith("/admin/series")
+                      ? "Series Control"
+                      : "Admin Dashboard"}
+                </span>
                 <button
                   className="button-secondary tactical-topbar-button"
                   onClick={contextValue.logout}

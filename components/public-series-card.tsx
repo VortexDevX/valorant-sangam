@@ -56,7 +56,7 @@ export function PublicSeriesCard({
     null;
 
   return (
-    <article className="public-card public-card--series px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
+    <article className="public-card public-card--series min-h-[25rem] px-4 py-4 sm:px-5 sm:py-5 md:min-h-[26rem] md:px-6 md:py-6">
       {withMapBackdrop && compact && backdropMap ? (
         <>
           <div className="pointer-events-none absolute inset-0 opacity-[0.18]">
@@ -119,7 +119,7 @@ export function PublicSeriesCard({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="public-card-copy">
             Map veto is not finished yet.
           </p>
         )}
@@ -131,7 +131,7 @@ export function PublicSeriesCard({
                 key={result.order}
                 className="flex flex-col gap-2 bg-[var(--bg-panel)] px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3"
               >
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="flex min-h-[1.75rem] flex-wrap items-center gap-2 sm:gap-3">
                   <span className="font-display text-[0.76rem] uppercase tracking-[0.12em] text-[var(--text-muted)]">
                     Map {result.order}
                   </span>
@@ -151,7 +151,7 @@ export function PublicSeriesCard({
               </div>
             ))}
             {compact && series.results.length > visibleResults.length ? (
-              <div className="font-display text-[0.68rem] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <div className="font-display text-[0.74rem] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 +{series.results.length - visibleResults.length} more result{series.results.length - visibleResults.length > 1 ? "s" : ""}
               </div>
             ) : null}

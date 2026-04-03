@@ -57,6 +57,14 @@ export async function POST(
     }
 
     const series = serializeSeries(existing as Record<string, unknown>);
+
+    if (series.locked) {
+      return Response.json(
+        { error: "This series is locked. Unlock it before editing results." },
+        { status: 409 },
+      );
+    }
+
     const nextMap = getNextSeriesMap(series);
 
     if (!nextMap) {

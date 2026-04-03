@@ -18,6 +18,10 @@ export function AdminBracketHub() {
   const { token } = useAdminSession();
   const [brackets, setBrackets] = useState<BracketRecord[]>([]);
   const [formValue, setFormValue] = useState(initialForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "in_progress" | "completed" | "frozen"
+  >("all");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -222,6 +226,51 @@ export function AdminBracketHub() {
         </form>
 
         <div className="space-y-4">
+          <section className="panel px-6 py-5 md:px-8">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div>
+                <label className="label" htmlFor="bracket-search">
+                  Search Brackets
+                </label>
+                <div className="tactical-input-wrap">
+                  <input
+                    id="bracket-search"
+                    className="field"
+                    placeholder="TITLE OR CHAMPION"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label" htmlFor="bracket-status-filter">
+                  Filter
+                </label>
+                <select
+                  id="bracket-status-filter"
+                  className="select"
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(
+                      event.target.value as
+                        | "all"
+                        | "draft"
+                        | "in_progress"
+                        | "completed"
+                        | "frozen",
+                    )
+                  }
+                >
+                  <option value="all">All Brackets</option>
+                  <option value="draft">Draft</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="frozen">Frozen</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="eyebrow">Bracket Archive</p>
@@ -236,11 +285,59 @@ export function AdminBracketHub() {
 
           {loading ? (
             <div className="status-info">Loading brackets...</div>
-          ) : brackets.length === 0 ? (
+          ) : brackets.filter((bracket) => {
+              if (statusFilter === "frozen" && !bracket.locked) {
+                return false;
+              }
+
+              if (
+                statusFilter !== "all" &&
+                statusFilter !== "frozen" &&
+                bracket.status !== statusFilter
+              ) {
+                return false;
+              }
+
+              const normalizedQuery = searchQuery.trim().toLowerCase();
+
+              if (!normalizedQuery) {
+                return true;
+              }
+
+              return [bracket.title, bracket.championName ?? ""]
+                .join(" ")
+                .toLowerCase()
+                .includes(normalizedQuery);
+            }).length === 0 ? (
             <div className="empty-state">No brackets created yet.</div>
           ) : (
             <div className="space-y-3">
-              {brackets.map((bracket) => (
+              {brackets
+                .filter((bracket) => {
+                  if (statusFilter === "frozen" && !bracket.locked) {
+                    return false;
+                  }
+
+                  if (
+                    statusFilter !== "all" &&
+                    statusFilter !== "frozen" &&
+                    bracket.status !== statusFilter
+                  ) {
+                    return false;
+                  }
+
+                  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+                  if (!normalizedQuery) {
+                    return true;
+                  }
+
+                  return [bracket.title, bracket.championName ?? ""]
+                    .join(" ")
+                    .toLowerCase()
+                    .includes(normalizedQuery);
+                })
+                .map((bracket) => (
                 <article
                   key={bracket._id}
                   className="panel px-5 py-5 md:px-6 md:py-6"
@@ -257,6 +354,11 @@ export function AdminBracketHub() {
                         <span className="tactical-chip text-[var(--text-secondary)]">
                           {bracket.format}
                         </span>
+                        {bracket.locked ? (
+                          <span className="tactical-chip text-[var(--danger)]">
+                            frozen
+                          </span>
+                        ) : null}
                         {bracket.championName ? (
                           <span className="tactical-chip text-[var(--success)]">
                             {bracket.championName}

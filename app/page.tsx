@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { PublicTopbar } from "@/components/public-topbar";
 import { PublicBracketCard } from "@/components/public-bracket-card";
 import { PublicUpcomingMatchCard } from "@/components/public-upcoming-match-card";
 import { StatusToasts } from "@/components/status-toasts";
@@ -70,27 +71,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
-      <header className="tactical-topbar">
-        <div className="page-wrap !py-0">
-          <div className="tactical-topbar-inner">
-            <div className="tactical-topbar-side tactical-topbar-side--left">
-              <span className="tactical-accent" />
-              <span className="tactical-brand tactical-topbar-brand">
-                Valorant Sangam
-              </span>
-            </div>
-
-            <div className="tactical-topbar-plate">
-              <span className="tactical-topbar-plate-label">Home</span>
-            </div>
-
-            <div className="tactical-topbar-side tactical-topbar-side--right">
-              <span className="tactical-accent tactical-accent--small" />
-              <span className="tactical-topbar-meta">Match Hub</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PublicTopbar active="home" statusLabel="Public Feed" />
 
       <section className="relative isolate overflow-hidden bg-[var(--bg-panel-lowest)]">
         <div className="absolute inset-0 opacity-35">
@@ -148,7 +129,7 @@ export default function Home() {
             <div className="status-info">Loading series...</div>
           ) : (
             <div className="space-y-10">
-              <section className="space-y-4">
+              <section className="space-y-4" id="upcoming">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div className="space-y-3">
                     <span className="section-accent section-accent--upcoming">
@@ -167,7 +148,7 @@ export default function Home() {
                     No upcoming matches are ready yet.
                   </div>
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
                     {upcomingMatches.map((entry) => (
                       <PublicUpcomingMatchCard
                         key={`${entry.series._id}-${entry.mapSlot.order}`}
@@ -180,7 +161,7 @@ export default function Home() {
                 )}
               </section>
 
-              <section className="space-y-4">
+              <section className="space-y-4" id="series">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div className="space-y-3">
                     <span className="section-accent section-accent--series">
@@ -197,7 +178,7 @@ export default function Home() {
                 {series.length === 0 ? (
                   <div className="empty-state">No series added yet.</div>
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
                     {series.map((entry) => (
                       <PublicSeriesCard
                         key={entry._id}
@@ -210,7 +191,7 @@ export default function Home() {
                 )}
               </section>
 
-              <section className="space-y-4">
+              <section className="space-y-4" id="brackets">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div className="space-y-3">
                     <span className="section-accent section-accent--bracket">
@@ -227,7 +208,7 @@ export default function Home() {
                 {brackets.length === 0 ? (
                   <div className="empty-state">No brackets added yet.</div>
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {brackets.map((bracket) => (
                       <PublicBracketCard key={bracket._id} bracket={bracket} />
                     ))}

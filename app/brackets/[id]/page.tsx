@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { BracketBoard } from "@/components/bracket-board";
+import { PublicTopbar } from "@/components/public-topbar";
 import { StatusToasts } from "@/components/status-toasts";
+import { downloadBracketCard, downloadRenderedBracketPng } from "@/lib/export-cards";
 import type { BracketRecord } from "@/types/bracket";
+
+const PUBLIC_BRACKET_EXPORT_ID = "public-bracket-export";
 
 export default function BracketPage() {
   const params = useParams<{ id: string }>();
@@ -40,6 +44,7 @@ export default function BracketPage() {
   return (
     <main className="app-shell">
       <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
+      <PublicTopbar active="brackets" statusLabel="Bracket View" />
       <div className="page-wrap space-y-10">
         <section className="space-y-4">
           <Link className="eyebrow" href="/">
@@ -49,6 +54,31 @@ export default function BracketPage() {
           <p className="page-subtitle">
             Full single-elimination bracket for this tournament stage.
           </p>
+          {bracket ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                className="button-secondary"
+                onClick={() => {
+                  void downloadRenderedBracketPng(
+                    bracket,
+                    `${bracket.slug || "bracket"}-board.png`,
+                  );
+                }}
+                type="button"
+              >
+                Download Bracket PNG
+              </button>
+              <button
+                className="button-secondary"
+                onClick={() =>
+                  downloadBracketCard(bracket, bracket.championName ? "champion" : "summary")
+                }
+                type="button"
+              >
+                Download Champion Card
+              </button>
+            </div>
+          ) : null}
         </section>
 
         {loading ? (
@@ -56,7 +86,7 @@ export default function BracketPage() {
         ) : !bracket ? (
           <div className="empty-state">Bracket not found.</div>
         ) : (
-          <BracketBoard bracket={bracket} />
+          <BracketBoard bracket={bracket} exportId={PUBLIC_BRACKET_EXPORT_ID} />
         )}
       </div>
     </main>

@@ -122,6 +122,13 @@ export async function PATCH(
       );
     }
 
+    if ((teamsChanged || formatChanged) && serialized.locked) {
+      return Response.json(
+        { error: "This bracket is frozen. Unfreeze it before changing teams or format." },
+        { status: 409 },
+      );
+    }
+
     const updatePayload: Record<string, unknown> = {
       updatedAt: new Date(),
       updatedBy: admin,
@@ -137,9 +144,14 @@ export async function PATCH(
       updatePayload.format = parsed.data.format;
     }
 
+    if (parsed.data.locked !== undefined) {
+      updatePayload.locked = parsed.data.locked;
+    }
+
     if (parsed.data.teams) {
       updatePayload.teams = nextTeams;
       updatePayload.winners = [];
+      updatePayload.manualResolutions = [];
     }
 
     await db.collection("brackets").updateOne(

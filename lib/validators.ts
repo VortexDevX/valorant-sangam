@@ -84,6 +84,7 @@ export const vetoSessionSchema = z
 export const vetoActionSchema = z.object({
   map: z.enum(MAP_POOL).optional(),
   side: z.enum(["atk", "def"]).optional(),
+  undo: z.literal(true).optional(),
 });
 
 export const seriesCreateSchema = z
@@ -120,6 +121,11 @@ export const seriesResultSchema = z.object({
 export const seriesUpdateSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("swap_sides"),
+  }),
+  z.object({
+    action: z.literal("update_setup"),
+    format: z.enum(["bo1", "bo3", "bo5"]),
+    vetoStarter: z.enum(["teamA", "teamB"]),
   }),
   z.object({
     action: z.literal("set_lock"),

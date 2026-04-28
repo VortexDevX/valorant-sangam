@@ -9,14 +9,14 @@ import { VetoBoard } from "@/components/veto-board";
 import { downloadSeriesResultCard } from "@/lib/export-cards";
 import { MAPS } from "@/lib/map-pool";
 import {
-  canSwapSeriesSides,
+  canEditSeriesSetup,
   createBracketSeriesSummary,
   getNextSeriesMap,
 } from "@/lib/series";
 import { deriveVetoState } from "@/lib/veto-engine";
 import type { MapId } from "@/lib/map-pool";
 import type { SeriesRecord } from "@/types/series";
-import type { StartingSide, VetoSessionRecord } from "@/types/veto";
+import type { SeriesFormat, StartingSide, TeamSlot, VetoSessionRecord } from "@/types/veto";
 
 interface AdminSeriesWorkspaceProps {
   seriesId: string;
@@ -128,7 +128,50 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
     }
   }
 
-  async function applyVetoAction(action: { map?: MapId; side?: StartingSide }) {
+  async function updateSeriesSetup(nextSetup: {
+    format?: SeriesFormat;
+    vetoStarter?: TeamSlot;
+  }) {
+    if (!series) {
+      return;
+    }
+
+    const format = nextSetup.format ?? series.format;
+    const vetoStarter = nextSetup.vetoStarter ?? series.vetoStarter;
+
+    if (format === series.format && vetoStarter === series.vetoStarter) {
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage(null);
+
+      const response = await fetch(`/api/series/${series._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: "update_setup", format, vetoStarter }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to update series setup.");
+      }
+
+      setSeries(payload.series);
+      setMessage("Series setup updated.");
+    } catch (setupError) {
+      setError(setupError instanceof Error ? setupError.message : "Failed to update series setup.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyVetoAction(action: { map?: MapId; side?: StartingSide; undo?: boolean }) {
     if (!series) {
       return;
     }
@@ -156,39 +199,6 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
       setMessage(payload.series.veto?.status === "completed" ? "Veto complete." : "Veto step saved.");
     } catch (applyError) {
       setError(applyError instanceof Error ? applyError.message : "Failed to update veto.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function swapSides() {
-    if (!series) {
-      return;
-    }
-
-    try {
-      setBusy(true);
-      setError(null);
-      setMessage(null);
-
-      const response = await fetch(`/api/series/${series._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action: "swap_sides" }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to swap series sides.");
-      }
-
-      setSeries(payload.series);
-      setMessage("Team A and Team B swapped.");
-    } catch (swapError) {
-      setError(swapError instanceof Error ? swapError.message : "Failed to swap series sides.");
     } finally {
       setBusy(false);
     }
@@ -346,6 +356,7 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
           teamA: series.teamA,
           teamB: series.teamB,
           format: series.format,
+          vetoStarter: series.vetoStarter,
           status:
             series.veto.status === "completed" ? "completed" : "in_progress",
           mapPool: series.veto.mapPool,
@@ -359,10 +370,11 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
       ? null
       : deriveVetoState({
           format: series.format,
+          vetoStarter: series.vetoStarter,
           mapPool: series.veto.mapPool,
           actions: series.veto.actions,
         });
-  const canUseCoinTossSetup = canSwapSeriesSides(series);
+  const canEditSetup = canEditSeriesSetup(series);
 
   return (
     <div className="space-y-8">
@@ -383,10 +395,10 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
             </Link>
           ) : null}
         </div>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-3">
             <h1 className="page-title">{series.teamA} vs {series.teamB}</h1>
-            <p className="page-subtitle mt-4">
+            <p className="page-subtitle max-w-3xl">
               One workspace for the matchup: map pool selection, veto flow, and
               ordered match results.
             </p>
@@ -427,54 +439,103 @@ export function AdminSeriesWorkspace({ seriesId }: AdminSeriesWorkspaceProps) {
         </div>
       </section>
 
-      {canUseCoinTossSetup ? (
+      {canEditSetup ? (
         <section className="panel space-y-5 px-6 py-6 md:px-8 md:py-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="eyebrow">Coin Toss</p>
-              <h2 className="mt-2 font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                Set Team A Before Veto
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div className="space-y-3">
+              <p className="eyebrow">Series Setup</p>
+              <h2 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                Format And Veto Order
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-                The toss winner becomes Team A for veto and side-flow purposes. Once veto starts,
-                this setup locks and the matchup order can no longer be swapped.
+              <p className="max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+                Configure this matchup before veto starts. Set the series length
+                and choose which current team opens the veto.
               </p>
             </div>
-            <span className="tactical-chip text-[var(--text-secondary)]">
-              Current A: {series.teamA}
-            </span>
+            <div className="flex flex-wrap gap-3">
+              <span className="tactical-chip text-[var(--text-secondary)]">
+                Current Format: {series.format}
+              </span>
+              <span className="tactical-chip text-[var(--text-secondary)]">
+                First Ban: {series.vetoStarter === "teamA" ? series.teamA : series.teamB}
+              </span>
+            </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <button
-              className="panel-soft text-left px-5 py-5 transition hover:-translate-y-0.5"
-              disabled={busy}
-              onClick={() => setMessage(`${series.teamA} stays as Team A.`)}
-              type="button"
-            >
-              <div className="eyebrow">Keep Current Side</div>
-              <div className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                {series.teamA}
-              </div>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
-                Use this if the current Team A already won the toss.
-              </p>
-            </button>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <section className="panel-soft flex h-full flex-col space-y-4 px-5 py-5">
+              <div className="eyebrow">Series Format</div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(["bo1", "bo3", "bo5"] as const).map((formatOption) => {
+                  const active = series.format === formatOption;
 
-            <button
-              className="panel-soft text-left px-5 py-5 transition hover:-translate-y-0.5"
-              disabled={busy}
-              onClick={() => void swapSides()}
-              type="button"
-            >
-              <div className="eyebrow">Swap Into Team A</div>
-              <div className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                {series.teamB}
+                  return (
+                    <button
+                      key={formatOption}
+                      className={`text-left px-4 py-4 transition ${
+                        active
+                          ? "bg-[var(--bg-accent)] text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+                          : "bg-[var(--bg-panel)] text-[var(--text-primary)] hover:-translate-y-0.5"
+                      }`}
+                      disabled={busy}
+                      onClick={() => void updateSeriesSetup({ format: formatOption })}
+                      type="button"
+                    >
+                      <div className="font-display text-[0.68rem] font-black uppercase tracking-[0.18em]">
+                        {formatOption}
+                      </div>
+                      <div className={`mt-3 text-sm leading-6 ${active ? "text-white/82" : "text-[var(--text-secondary)]"}`}>
+                        {formatOption === "bo1"
+                          ? "Single-map quick decider."
+                          : formatOption === "bo3"
+                            ? "Standard playoff series."
+                            : "Extended title-match length."}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">
-                Use this if the current Team B won the toss and should become Team A.
+            </section>
+
+            <section className="panel-soft flex h-full flex-col space-y-4 px-5 py-5">
+              <div className="eyebrow">First Ban Team</div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {([
+                  { slot: "teamA", name: series.teamA },
+                  { slot: "teamB", name: series.teamB },
+                ] as const).map((option) => {
+                  const active = series.vetoStarter === option.slot;
+
+                  return (
+                    <button
+                      key={option.slot}
+                      className={`text-left px-4 py-4 transition ${
+                        active
+                          ? "bg-[rgba(255,70,85,0.16)] text-[var(--text-primary)] shadow-[0_0_0_1px_rgba(255,70,85,0.35)]"
+                          : "bg-[var(--bg-panel)] text-[var(--text-primary)] hover:-translate-y-0.5"
+                      }`}
+                      disabled={busy}
+                      onClick={() => void updateSeriesSetup({ vetoStarter: option.slot })}
+                      type="button"
+                    >
+                      <div className="font-display text-[0.68rem] font-black uppercase tracking-[0.18em] text-[var(--text-accent)]">
+                        Starts Veto
+                      </div>
+                      <div className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                        {option.name}
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                        This team takes the first ban and the first map pick in the veto flow.
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                The selected team takes the first ban and the first map pick in
+                the veto flow.
               </p>
-            </button>
+            </section>
           </div>
         </section>
       ) : null}

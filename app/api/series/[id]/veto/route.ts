@@ -147,9 +147,17 @@ export async function PATCH(
       return Response.json({ error: "Veto has not been started yet." }, { status: 400 });
     }
 
+    if (series.results.length > 0) {
+      return Response.json(
+        { error: "Cannot change veto after map results have been added." },
+        { status: 409 },
+      );
+    }
+
     const nextActions = applyVetoAction(
       {
         format: series.format,
+        vetoStarter: series.vetoStarter,
         mapPool: series.veto.mapPool,
         actions: series.veto.actions,
       },
@@ -157,6 +165,7 @@ export async function PATCH(
     );
     const derived = deriveVetoState({
       format: series.format,
+      vetoStarter: series.vetoStarter,
       mapPool: series.veto.mapPool,
       actions: nextActions,
     });

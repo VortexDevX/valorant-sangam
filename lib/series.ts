@@ -83,6 +83,12 @@ export function canSwapSeriesSides(
   return !series.locked && series.veto === null && series.results.length === 0;
 }
 
+export function canEditSeriesSetup(
+  series: Pick<SeriesRecord, "locked" | "veto" | "results">,
+) {
+  return !series.locked && series.veto === null && series.results.length === 0;
+}
+
 function serializeVetoAction(action: Record<string, unknown>): VetoActionRecord {
   return {
     step: Number(action.step),
@@ -211,6 +217,7 @@ export function serializeSeries(series: Record<string, unknown>): SeriesRecord {
         : null,
     locked: Boolean(series.locked),
     format,
+    vetoStarter: series.vetoStarter === "teamB" ? "teamB" : "teamA",
     veto,
     results,
     overallScore: deriveOverallScore(format, results),

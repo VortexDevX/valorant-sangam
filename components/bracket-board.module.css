@@ -1,0 +1,788 @@
+.surface {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.surfaceAdmin {
+  background:
+    radial-gradient(circle at top left, rgba(255, 92, 92, 0.22), transparent 28rem),
+    linear-gradient(135deg, rgba(35, 8, 12, 0.98), rgba(97, 20, 27, 0.95) 42%, rgba(22, 7, 10, 0.98));
+}
+
+.surfacePublic {
+  background:
+    radial-gradient(circle at top right, rgba(255, 70, 85, 0.18), transparent 26rem),
+    linear-gradient(145deg, rgba(9, 18, 30, 0.98), rgba(17, 31, 47, 0.98) 50%, rgba(8, 14, 22, 0.98));
+}
+
+.chrome {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+}
+
+.chrome::before,
+.chrome::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chrome::before {
+  top: -5rem;
+  left: -3rem;
+  width: 18rem;
+  height: 18rem;
+  transform: rotate(12deg);
+}
+
+.chrome::after {
+  right: 5rem;
+  top: 2rem;
+  width: 12rem;
+  height: 12rem;
+  transform: rotate(45deg);
+}
+
+.chromeLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chromeLineLeft {
+  left: 18%;
+}
+
+.chromeLineRight {
+  right: 24%;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+.heading {
+  max-width: 54rem;
+}
+
+.kicker {
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.surfaceAdmin .kicker {
+  color: rgba(255, 211, 182, 0.86);
+}
+
+.surfacePublic .kicker {
+  color: rgba(175, 201, 238, 0.9);
+}
+
+.title {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.4rem, 5vw, 4.25rem);
+  line-height: 0.9;
+  font-weight: 800;
+  letter-spacing: -0.07em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 0.9rem 0 0;
+  max-width: 50rem;
+  font-size: 0.96rem;
+  line-height: 1.75;
+}
+
+.surfaceAdmin .subtitle {
+  color: rgba(255, 237, 224, 0.82);
+}
+
+.surfacePublic .subtitle {
+  color: rgba(211, 226, 244, 0.8);
+}
+
+.metaStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.38rem 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.surfaceAdmin .metaItem {
+  background: rgba(24, 8, 10, 0.36);
+  color: rgba(255, 244, 230, 0.92);
+}
+
+.surfacePublic .metaItem {
+  background: rgba(8, 15, 24, 0.46);
+  color: rgba(223, 232, 244, 0.9);
+}
+
+.metaStrong {
+  border-color: rgba(255, 210, 145, 0.32);
+}
+
+.layout {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.layoutAdmin {
+  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+}
+
+.layoutPublic {
+  grid-template-columns: minmax(0, 1fr) minmax(15.5rem, 17.5rem);
+}
+
+.rail {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.railCard {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+}
+
+.surfaceAdmin .railCard {
+  background: rgba(18, 7, 9, 0.42);
+}
+
+.surfacePublic .railCard {
+  background: rgba(7, 14, 22, 0.52);
+}
+
+.railLabel {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.surfaceAdmin .railLabel {
+  color: rgba(255, 212, 171, 0.86);
+}
+
+.surfacePublic .railLabel {
+  color: rgba(175, 201, 238, 0.84);
+}
+
+.railTitle {
+  margin: 0.45rem 0 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.railText {
+  margin: 0.7rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.checklist {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.checklist li {
+  position: relative;
+  padding-left: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 0.38rem;
+  height: 0.38rem;
+  background: var(--bg-accent);
+}
+
+.legend {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.legendItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.legendSwatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.swatchWinner {
+  background: rgba(255, 70, 85, 0.9);
+}
+
+.swatchPending {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.swatchAuto {
+  background: rgba(255, 213, 117, 0.86);
+}
+
+.legendText {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.viewport {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.surfaceAdmin .viewport {
+  background: rgba(17, 6, 8, 0.36);
+}
+
+.surfacePublic .viewport {
+  background: rgba(7, 14, 22, 0.5);
+}
+
+.viewportBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1rem;
+}
+
+.viewportTitle {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scrollHint {
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.scrollArea {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.scrollArea::-webkit-scrollbar {
+  height: 5px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  background: rgba(255, 70, 85, 0.72);
+}
+
+.board {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  min-width: max-content;
+}
+
+.roundColumn {
+  width: clamp(16rem, 20vw, 19.5rem);
+  flex-shrink: 0;
+}
+
+.roundHeader {
+  border-left: 3px solid rgba(255, 255, 255, 0.32);
+  padding-left: 0.8rem;
+}
+
+.roundTitle {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.roundMeta {
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.columnBody {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.9rem;
+}
+
+.matchPair {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+}
+
+.connectorTop,
+.connectorBottom,
+.connectorStem,
+.connectorBridge {
+  position: absolute;
+  right: -1rem;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.connectorTop,
+.connectorBottom,
+.connectorBridge {
+  height: 1px;
+}
+
+.connectorTop {
+  top: 26%;
+  width: 1rem;
+}
+
+.connectorBottom {
+  top: 74%;
+  width: 1rem;
+}
+
+.connectorStem {
+  top: 26%;
+  width: 1px;
+  height: 48%;
+}
+
+.connectorBridge {
+  top: 50%;
+  right: -2rem;
+  width: 1rem;
+}
+
+.matchCard {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.9rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.surfaceAdmin .matchCard {
+  background: rgba(19, 7, 10, 0.78);
+}
+
+.surfacePublic .matchCard {
+  background: rgba(10, 16, 26, 0.82);
+}
+
+.matchHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.matchLabel {
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.matchState {
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stateReady {
+  color: rgba(255, 212, 171, 0.88);
+}
+
+.stateWaiting {
+  color: var(--text-muted);
+}
+
+.stateComplete {
+  color: rgba(214, 255, 212, 0.9);
+}
+
+.slotList {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  min-height: 4.6rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.surfaceAdmin .slot {
+  background: rgba(33, 11, 14, 0.72);
+}
+
+.surfacePublic .slot {
+  background: rgba(14, 22, 34, 0.82);
+}
+
+.slotWinner {
+  border-color: rgba(255, 212, 171, 0.42);
+}
+
+.surfaceAdmin .slotWinner {
+  background: rgba(113, 22, 30, 0.92);
+}
+
+.surfacePublic .slotWinner {
+  background: rgba(42, 69, 111, 0.88);
+}
+
+.slotBye {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.slotPending {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.slotInteractive:hover {
+  border-color: rgba(255, 212, 171, 0.72);
+  transform: translateX(2px);
+}
+
+.slotMain {
+  min-width: 0;
+}
+
+.slotMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+
+.seedTag,
+.slotBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.15rem;
+  padding: 0.08rem 0.4rem;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.seedTag {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.slotBadge {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+
+.badgeWinner {
+  border-color: rgba(255, 212, 171, 0.34);
+  color: rgba(255, 228, 202, 0.92);
+}
+
+.badgeAuto {
+  border-color: rgba(255, 215, 117, 0.3);
+  color: rgba(255, 223, 156, 0.92);
+}
+
+.slotName {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slotSubtext {
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.teamInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.teamInput::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.slotActions {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.actionButton {
+  min-width: 5.75rem;
+  border: 1px solid rgba(255, 212, 171, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.5rem 0.7rem;
+  color: rgba(255, 240, 224, 0.92);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+  border-color: rgba(255, 212, 171, 0.65);
+  background: rgba(255, 212, 171, 0.12);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slotStatus {
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.statusWin {
+  color: rgba(255, 228, 202, 0.92);
+}
+
+.statusFoot {
+  margin-top: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.footText {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.clearButton {
+  border: none;
+  background: none;
+  padding: 0;
+  color: rgba(255, 212, 171, 0.9);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.clearButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.championColumn {
+  width: 15.5rem;
+  flex-shrink: 0;
+}
+
+.championCard {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 1.1rem;
+}
+
+.surfaceAdmin .championCard {
+  background: linear-gradient(180deg, rgba(120, 22, 31, 0.92), rgba(33, 10, 13, 0.96));
+}
+
+.surfacePublic .championCard {
+  background: linear-gradient(180deg, rgba(34, 58, 92, 0.92), rgba(10, 18, 29, 0.96));
+}
+
+.championLabel {
+  color: rgba(255, 229, 196, 0.92);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.championName {
+  margin-top: 0.8rem;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.9rem;
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.championMeta {
+  margin-top: 0.7rem;
+  color: rgba(255, 239, 225, 0.76);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.timestamp {
+  color: var(--text-muted);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  .layoutAdmin,
+  .layoutPublic {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+
+  .viewportBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .scrollArea {
+    padding: 0.85rem;
+  }
+
+  .roundColumn {
+    width: min(17rem, calc(100vw - 4rem));
+  }
+
+  .championColumn {
+    width: min(14rem, calc(100vw - 5rem));
+  }
+
+  .slot {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .slotActions {
+    justify-items: start;
+  }
+
+  .actionButton {
+    min-width: 100%;
+  }
+
+  .statusFoot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

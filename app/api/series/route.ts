@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       manualContinuation: null,
       locked: false,
       format: parsed.data.format,
+      vetoStarter: "teamA" as const,
       veto: null,
       results: [],
       createdAt: now,

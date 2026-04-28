@@ -71,6 +71,7 @@ export interface SeriesRecord {
   manualContinuation: SeriesManualContinuationLink | null;
   locked: boolean;
   format: SeriesFormat;
+  vetoStarter: TeamSlot;
   status: SeriesStatus;
   veto: SeriesVetoState | null;
   results: SeriesResultRecord[];

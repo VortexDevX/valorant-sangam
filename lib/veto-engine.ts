@@ -2,66 +2,70 @@ import { MAP_POOL, type MapId } from "@/lib/map-pool";
 import type {
   DerivedVetoState,
   SeriesFormat,
-  StartingSide,
+  TeamSlot,
+  VetoActionInput,
   VetoActionRecord,
   VetoResultMap,
   VetoSessionRecord,
   VetoStepDefinition,
 } from "@/types/veto";
 
-export interface VetoActionInput {
-  map?: MapId;
-  side?: StartingSide;
-}
-
 interface SessionShape {
   format: SeriesFormat;
+  vetoStarter: TeamSlot;
   mapPool?: MapId[];
   actions: VetoActionRecord[];
 }
 
-function getStepTemplate(format: SeriesFormat): VetoStepDefinition[] {
+function otherTeam(team: TeamSlot): TeamSlot {
+  return team === "teamA" ? "teamB" : "teamA";
+}
+
+function getStepTemplate(format: SeriesFormat, vetoStarter: TeamSlot): VetoStepDefinition[] {
+  const first = vetoStarter;
+  const second = otherTeam(vetoStarter);
+
   if (format === "bo1") {
     return [
-      { step: 1, type: "ban", team: "teamA" },
-      { step: 2, type: "ban", team: "teamB" },
-      { step: 3, type: "ban", team: "teamA" },
-      { step: 4, type: "ban", team: "teamB" },
-      { step: 5, type: "ban", team: "teamA" },
-      { step: 6, type: "ban", team: "teamB" },
+      { step: 1, type: "ban", team: first },
+      { step: 2, type: "ban", team: second },
+      { step: 3, type: "ban", team: first },
+      { step: 4, type: "ban", team: second },
+      { step: 5, type: "ban", team: first },
+      { step: 6, type: "ban", team: second },
       { step: 7, type: "decider", team: "system", order: 1 },
-      { step: 8, type: "side", team: "teamB", order: 1 },
+      { step: 8, type: "side", team: second, order: 1 },
     ];
   }
 
   if (format === "bo3") {
     return [
-      { step: 1, type: "ban", team: "teamA" },
-      { step: 2, type: "ban", team: "teamB" },
-      { step: 3, type: "pick", team: "teamA", order: 1 },
-      { step: 4, type: "side", team: "teamB", order: 1 },
-      { step: 5, type: "pick", team: "teamB", order: 2 },
-      { step: 6, type: "side", team: "teamA", order: 2 },
-      { step: 7, type: "ban", team: "teamA" },
-      { step: 8, type: "ban", team: "teamB" },
+      { step: 1, type: "ban", team: first },
+      { step: 2, type: "ban", team: second },
+      { step: 3, type: "pick", team: first, order: 1 },
+      { step: 4, type: "side", team: second, order: 1 },
+      { step: 5, type: "pick", team: second, order: 2 },
+      { step: 6, type: "side", team: first, order: 2 },
+      { step: 7, type: "ban", team: first },
+      { step: 8, type: "ban", team: second },
       { step: 9, type: "decider", team: "system", order: 3 },
-      { step: 10, type: "side", team: "teamB", order: 3 },
+      { step: 10, type: "side", team: second, order: 3 },
     ];
   }
 
   return [
-    { step: 1, type: "ban", team: "teamA" },
-    { step: 2, type: "ban", team: "teamB" },
-    { step: 3, type: "pick", team: "teamA", order: 1 },
-    { step: 4, type: "side", team: "teamB", order: 1 },
-    { step: 5, type: "pick", team: "teamB", order: 2 },
-    { step: 6, type: "side", team: "teamA", order: 2 },
-    { step: 7, type: "pick", team: "teamA", order: 3 },
-    { step: 8, type: "side", team: "teamB", order: 3 },
-    { step: 9, type: "pick", team: "teamB", order: 4 },
-    { step: 10, type: "side", team: "teamA", order: 4 },
+    { step: 1, type: "ban", team: first },
+    { step: 2, type: "ban", team: second },
+    { step: 3, type: "pick", team: first, order: 1 },
+    { step: 4, type: "side", team: second, order: 1 },
+    { step: 5, type: "pick", team: second, order: 2 },
+    { step: 6, type: "side", team: first, order: 2 },
+    { step: 7, type: "pick", team: first, order: 3 },
+    { step: 8, type: "side", team: second, order: 3 },
+    { step: 9, type: "pick", team: second, order: 4 },
+    { step: 10, type: "side", team: first, order: 4 },
     { step: 11, type: "decider", team: "system", order: 5 },
-    { step: 12, type: "side", team: "teamB", order: 5 },
+    { step: 12, type: "side", team: second, order: 5 },
   ];
 }
 
@@ -72,7 +76,7 @@ function sortMaps(maps: VetoResultMap[]) {
 export function deriveVetoState(session: SessionShape): DerivedVetoState {
   const availableMaps = new Set<MapId>(session.mapPool ?? MAP_POOL);
   const resultByOrder = new Map<number, VetoResultMap>();
-  const templates = getStepTemplate(session.format);
+  const templates = getStepTemplate(session.format, session.vetoStarter);
 
   for (const action of session.actions) {
     if (action.type === "ban" && action.map) {
@@ -119,9 +123,17 @@ export function deriveVetoState(session: SessionShape): DerivedVetoState {
 }
 
 export function applyVetoAction(
-  session: Pick<VetoSessionRecord, "format" | "mapPool" | "actions">,
+  session: Pick<VetoSessionRecord, "format" | "vetoStarter" | "mapPool" | "actions">,
   input: VetoActionInput,
 ) {
+  if (input.undo) {
+    if (session.actions.length === 0) {
+      throw new Error("There is no veto action to undo.");
+    }
+
+    return session.actions.slice(0, -1);
+  }
+
   const derived = deriveVetoState(session);
   const nextStep = derived.nextStep;
 

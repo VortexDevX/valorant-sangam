@@ -15,7 +15,7 @@ interface VetoBoardProps {
   session: VetoSessionRecord;
   derived: DerivedVetoState;
   busy: boolean;
-  onApply: (payload: { map?: MapId; side?: StartingSide }) => Promise<void>;
+  onApply: (payload: { map?: MapId; side?: StartingSide; undo?: boolean }) => Promise<void>;
 }
 
 function MapPreview({ alt, src }: { alt: string; src: string }) {
@@ -160,8 +160,23 @@ export function VetoBoard({
                 {session.teamA} vs {session.teamB}
               </h2>
             </div>
-            <div className="tactical-chip text-[var(--text-secondary)]">
-              Selected Pool: {session.mapPool.length}
+            <div className="flex items-center gap-4">
+              {session.actions.length > 0 && !derived.isComplete ? (
+                <button
+                  className="button-secondary flex items-center gap-2 border-[var(--bg-accent)] !text-[var(--bg-accent)] hover:!bg-[var(--bg-accent)] hover:!text-white"
+                  disabled={busy}
+                  onClick={() => onApply({ undo: true })}
+                  type="button"
+                >
+                  <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                  {busy ? "Undoing..." : "Undo Last Action"}
+                </button>
+              ) : null}
+              <div className="tactical-chip text-[var(--text-secondary)]">
+                Selected Pool: {session.mapPool.length}
+              </div>
             </div>
           </div>
 
@@ -209,7 +224,7 @@ export function VetoBoard({
 
                   {state === "banned" ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-display text-5xl font-light text-[var(--bg-accent)]">
+                       <span className="font-display text-5xl font-light text-[var(--bg-accent)]">
                         ×
                       </span>
                     </div>

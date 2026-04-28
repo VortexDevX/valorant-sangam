@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
 import { getDb } from "@/lib/mongodb";
-import { canSwapSeriesSides, serializeSeries } from "@/lib/series";
+import { canEditSeriesSetup, canSwapSeriesSides, serializeSeries } from "@/lib/series";
 import { seriesUpdateSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
@@ -160,6 +160,42 @@ export async function PATCH(
             teamB: serialized.teamA,
             teamASlug: serialized.teamBSlug,
             teamBSlug: serialized.teamASlug,
+            updatedAt: now,
+            updatedBy: admin,
+          },
+        },
+      );
+
+      const updated = await db.collection("series").findOne({ _id: objectId });
+
+      return Response.json({
+        series: serializeSeries(updated as Record<string, unknown>),
+      });
+    }
+
+    if (parsed.data.action === "update_setup") {
+      if (serialized.locked) {
+        return Response.json(
+          { error: "This series is locked. Unlock it before changing setup." },
+          { status: 409 },
+        );
+      }
+
+      if (!canEditSeriesSetup(serialized)) {
+        return Response.json(
+          { error: "Setup can only be changed before veto starts." },
+          { status: 409 },
+        );
+      }
+
+      const now = new Date();
+
+      await db.collection("series").updateOne(
+        { _id: objectId },
+        {
+          $set: {
+            format: parsed.data.format,
+            vetoStarter: parsed.data.vetoStarter,
             updatedAt: now,
             updatedBy: admin,
           },

@@ -34,6 +34,7 @@ export interface VetoSessionRecord {
   teamA: string;
   teamB: string;
   format: SeriesFormat;
+  vetoStarter: TeamSlot;
   status: "in_progress" | "completed";
   mapPool: MapId[];
   actions: VetoActionRecord[];
@@ -54,4 +55,10 @@ export interface DerivedVetoState {
   nextStep: VetoStepDefinition | null;
   result: VetoResult;
   isComplete: boolean;
+}
+
+export interface VetoActionInput {
+  map?: MapId;
+  side?: StartingSide;
+  undo?: boolean;
 }

@@ -1,15 +1,50 @@
-# Valorant Sangam
+# Valorant Circuit
 
-Valorant Sangam is a Next.js tournament control app for running small Valorant events. It currently covers:
+🎮 A polished Next.js tournament controller for small Valorant events.
 
-- public tournament home with series, upcoming maps, team pages, and brackets
-- admin login with short-lived in-memory access
-- series creation
-- series-integrated map veto flow
-- ordered map result entry with Valorant score validation
-- single-elimination bracket management
+Valorant Circuit is designed to help organizers run match series, manage locker-room vetoes, and track bracket progress with a clean public dashboard.
 
-## Stack
+---
+
+## 🚀 What this app delivers
+
+- **Public tournament home** with series, brackets, and upcoming matches
+- **Team pages** that show all series for a given squad
+- **Admin login** with a lightweight session flow
+- **Series creation** and manual matchup entry
+- **Map veto workflow** with pool selection and team picks
+- **Score entry with Valorant validation** so only valid final map results are accepted
+- **Single-elimination bracket control** with winner advancement and seeded matchups
+
+---
+
+## 🧠 Core experience
+
+### Public side
+
+- `/` — tournament overview, upcoming matches, and bracket summary
+- `/team/[slug]` — team-specific pages and history
+- `/brackets/[id]` — live bracket viewing for event fans
+
+### Admin side
+
+- `/admin` — admin control center for series and bracket tools
+- `/admin/brackets` — bracket hub to create, edit, and lock bracket events
+- `/admin/series/[id]` — detailed series workspace for vetoing maps and entering results
+
+---
+
+## 🧩 Key features
+
+- **Bracket engine** lives in `lib/brackets.ts` and generates bracket state from seed data
+- **Visual bracket rendering** uses `@g-loot/react-tournament-brackets`
+- **Series logic** is centralized in `lib/series.ts` with veto flow, score derivation, and status rules
+- **Score validation** is enforced in `lib/validators.ts` and blocks invalid Valorant scorelines
+- **Admin auth** is handled via `app/api/admin/login/route.ts`, with token issuance for protected admin actions
+
+---
+
+## 🧪 Tech stack
 
 - Next.js 16
 - React 19
@@ -17,64 +52,20 @@ Valorant Sangam is a Next.js tournament control app for running small Valorant e
 - MongoDB
 - Zod
 - Tailwind CSS v4
+- `@g-loot/react-tournament-brackets`
+- `bcryptjs`, `jose`, `react-svg-pan-zoom`, `styled-components`
 
-## Current Architecture
+---
 
-### Public routes
+## ⚙️ Setup
 
-- `/`
-  Shows all series, upcoming played-next maps, and brackets.
-- `/team/[slug]`
-  Shows all series for a given team.
-- `/brackets/[id]`
-  Shows the public bracket view.
+1. Install dependencies
 
-### Admin routes
+```bash
+npm install
+```
 
-- `/admin`
-  Main admin hub for series.
-- `/admin/series/[id]`
-  Series workspace for map pool setup, veto actions, and result entry.
-- `/admin/brackets`
-  Bracket hub.
-- `/admin/brackets/[id]`
-  Bracket workspace for seeding and winner advancement.
-
-### API routes
-
-- `POST /api/admin/login`
-- `GET, POST /api/series`
-- `GET, DELETE /api/series/[id]`
-- `POST, PATCH /api/series/[id]/veto`
-- `POST /api/series/[id]/results`
-- `PATCH, DELETE /api/series/[id]/results/[order]`
-- `GET /api/team/[slug]`
-- `GET, POST /api/brackets`
-- `GET, PATCH, DELETE /api/brackets/[id]`
-- `PATCH /api/brackets/[id]/matches/[round]/[match]`
-- `GET /api/health`
-
-## Brackets
-
-Brackets are single elimination and use two layers:
-
-- `lib/brackets.ts` computes bracket state from `teams` plus winner selections
-- `@g-loot/react-tournament-brackets` handles the visual layout engine
-
-This keeps progression logic separate from rendering math.
-
-## Valorant Score Rules
-
-The app accepts only valid final Valorant map scores:
-
-- regulation: `13-0` through `13-11`
-- overtime: `14-12`, `15-13`, `16-14`, and so on
-
-It rejects ties and impossible endings like `13-12`, `12-10`, or `0-0`.
-
-## Environment Variables
-
-Create `.env.local` or `.env` with:
+2. Create `.env.local`
 
 ```env
 MONGODB_URI=
@@ -82,62 +73,65 @@ MONGODB_DB_NAME=
 AUTH_JWT_SECRET=
 ```
 
-## Local Development
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the app:
+3. Run the dev server
 
 ```bash
 npm run dev
 ```
 
-Run checks:
+4. Build for production
 
 ```bash
-npm run lint
 npm run build
 ```
 
-## Admin Setup
+---
 
-Seed the admin user:
+## 🧑‍💻 Admin setup
+
+Seed the admin account before using the admin UI:
 
 ```bash
 npm run seed:admin
 ```
 
-The admin token is returned by the login route and kept only in client memory. Refreshing the admin page logs the operator out.
+Then log in through the admin login form and manage:
 
-## Data Model Notes
+- series matchups
+- veto progress
+- result entry
+- bracket advancement
 
-### Series
+---
 
-A series stores:
+## ✅ Valid Valorant score rules
 
-- `teamA`, `teamB`
-- team slugs and `pairKey`
-- `format`
-- integrated veto state
-- ordered results
+Allowed final scores:
 
-`pairKey` is retained for grouping and lookups, but it is no longer treated as globally unique. Rematches are allowed.
+- regulation: `13-0` through `13-11`
+- overtime: `14-12`, `15-13`, `16-14`, etc.
 
-### Brackets
+Rejected scores include:
 
-A bracket stores:
+- ties like `13-13`
+- impossible endings like `13-12` or `12-10`
+- empty or malformed score strings
 
-- title
-- team count and bracket size
-- seeded team list
-- winner selections
+---
 
-The round tree is derived on read instead of being stored as mutable nested match documents.
+## 📁 Project layout
 
-## Cleanup Status
+- `app/` — Next.js pages and API route handlers
+- `components/` — UI components and admin interfaces
+- `lib/` — core business logic, DB helpers, validators, and bracket utilities
+- `types/` — shared TypeScript models for series, brackets, and veto logic
 
-Legacy standalone match-history and veto-session routes were removed. The app now uses the series workspace as the single source of truth for veto and results.
+---
+
+## 📝 Notes
+
+- The public feed is mostly server-rendered and uses dynamic data loading
+- Brackets are seeded to the next power of two and support BYEs automatically
+- Series status is derived from veto state and result completion
+
+Enjoy running events with Valorant Circuit. 👑

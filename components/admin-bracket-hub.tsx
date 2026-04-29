@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ConfirmButton } from "@/components/confirm-button";
 import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
 import type { BracketCreateInput, BracketRecord } from "@/types/bracket";
@@ -90,12 +91,6 @@ export function AdminBracketHub() {
   }
 
   async function handleDelete(bracketId: string) {
-    const confirmed = window.confirm("Delete this bracket?");
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       setDeletingId(bracketId);
       setMessage(null);
@@ -103,9 +98,7 @@ export function AdminBracketHub() {
 
       const response = await fetch(`/api/brackets/${bracketId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const payload = await response.json();
 
@@ -126,6 +119,22 @@ export function AdminBracketHub() {
     }
   }
 
+  const filteredBrackets = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return brackets.filter((bracket) => {
+      if (statusFilter === "frozen") return bracket.locked;
+      if (statusFilter !== "all" && bracket.status !== statusFilter)
+        return false;
+      if (!normalizedQuery) return true;
+
+      return [bracket.title, bracket.championName ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery);
+    });
+  }, [brackets, searchQuery, statusFilter]);
+
   return (
     <section className="space-y-8" id="brackets">
       <StatusToasts
@@ -143,9 +152,9 @@ export function AdminBracketHub() {
           <h2 className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
             New Bracket
           </h2>
-          <p className="mt-3 text-sm leading-7 text-(--text-secondary)">
+          <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
             Enter a title, total teams, and series format. The bracket starts
-            empty, and you choose the first-round matchups in the workspace.
+            empty — fill team names in the workspace.
           </p>
 
           <div className="mt-8 space-y-5">
@@ -187,7 +196,7 @@ export function AdminBracketHub() {
                 {Array.from({ length: 32 }, (_, index) => index + 1).map(
                   (count) => (
                     <option key={count} value={count}>
-                      {count} Teams
+                      {count} {count === 1 ? "Team" : "Teams"}
                     </option>
                   ),
                 )}
@@ -251,14 +260,7 @@ export function AdminBracketHub() {
                   className="select"
                   value={statusFilter}
                   onChange={(event) =>
-                    setStatusFilter(
-                      event.target.value as
-                        | "all"
-                        | "draft"
-                        | "in_progress"
-                        | "completed"
-                        | "frozen",
-                    )
+                    setStatusFilter(event.target.value as typeof statusFilter)
                   }
                 >
                   <option value="all">All Brackets</option>
@@ -285,59 +287,15 @@ export function AdminBracketHub() {
 
           {loading ? (
             <div className="status-info">Loading brackets...</div>
-          ) : brackets.filter((bracket) => {
-              if (statusFilter === "frozen" && !bracket.locked) {
-                return false;
-              }
-
-              if (
-                statusFilter !== "all" &&
-                statusFilter !== "frozen" &&
-                bracket.status !== statusFilter
-              ) {
-                return false;
-              }
-
-              const normalizedQuery = searchQuery.trim().toLowerCase();
-
-              if (!normalizedQuery) {
-                return true;
-              }
-
-              return [bracket.title, bracket.championName ?? ""]
-                .join(" ")
-                .toLowerCase()
-                .includes(normalizedQuery);
-            }).length === 0 ? (
-            <div className="empty-state">No brackets created yet.</div>
+          ) : filteredBrackets.length === 0 ? (
+            <div className="empty-state">
+              {brackets.length === 0
+                ? "No brackets created yet."
+                : "No brackets match your filters."}
+            </div>
           ) : (
             <div className="space-y-3">
-              {brackets
-                .filter((bracket) => {
-                  if (statusFilter === "frozen" && !bracket.locked) {
-                    return false;
-                  }
-
-                  if (
-                    statusFilter !== "all" &&
-                    statusFilter !== "frozen" &&
-                    bracket.status !== statusFilter
-                  ) {
-                    return false;
-                  }
-
-                  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-                  if (!normalizedQuery) {
-                    return true;
-                  }
-
-                  return [bracket.title, bracket.championName ?? ""]
-                    .join(" ")
-                    .toLowerCase()
-                    .includes(normalizedQuery);
-                })
-                .map((bracket) => (
+              {filteredBrackets.map((bracket) => (
                 <article
                   key={bracket._id}
                   className="panel px-5 py-5 md:px-6 md:py-6"
@@ -370,7 +328,7 @@ export function AdminBracketHub() {
                       </h3>
                       <p className="text-sm text-[var(--text-secondary)]">
                         {bracket.rounds.length} round
-                        {bracket.rounds.length > 1 ? "s" : ""} |{" "}
+                        {bracket.rounds.length !== 1 ? "s" : ""} ·{" "}
                         {bracket.rounds[0]?.matches.length ?? 0} opening matches
                       </p>
                     </div>
@@ -382,14 +340,12 @@ export function AdminBracketHub() {
                       >
                         Open Bracket
                       </Link>
-                      <button
-                        className="button-danger"
+                      <ConfirmButton
                         disabled={deletingId === bracket._id}
-                        onClick={() => void handleDelete(bracket._id)}
-                        type="button"
-                      >
-                        {deletingId === bracket._id ? "Deleting..." : "Delete"}
-                      </button>
+                        label="Delete"
+                        labelPending="Deleting..."
+                        onConfirm={() => void handleDelete(bracket._id)}
+                      />
                     </div>
                   </div>
                 </article>

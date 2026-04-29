@@ -1,5 +1,5 @@
 {
-  "name": "valorant-sangam",
+  "name": "valorant",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "seed:admin": "node --env-file-if-exists=.env.local --env-file-if-exists=.env --import tsx scripts/seed-admin.ts",
-    "repair:sangam-final": "node --env-file-if-exists=.env.local --env-file-if-exists=.env --import tsx scripts/repair-sangam-final.ts"
+    "seed:admin": "node --env-file-if-exists=.env.local --env-file-if-exists=.env --import tsx scripts/seed-admin.ts"
   },
   "dependencies": {
     "@g-loot/react-tournament-brackets": "^1.0.31-rc",

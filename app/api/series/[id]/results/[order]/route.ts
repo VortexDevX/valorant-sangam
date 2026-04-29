@@ -6,32 +6,12 @@ import {
 } from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
+import { resolveResultParams } from "@/lib/api-helpers";
 import { getDb } from "@/lib/mongodb";
 import { getWinnerFromScore, serializeSeries } from "@/lib/series";
 import { normalizeScore, seriesResultSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
-
-async function resolveParams(
-  context: { params: Promise<{ id: string; order: string }> },
-) {
-  const { id, order } = await context.params;
-
-  if (!ObjectId.isValid(id)) {
-    return null;
-  }
-
-  const orderNumber = Number(order);
-
-  if (!Number.isInteger(orderNumber) || orderNumber < 1) {
-    return null;
-  }
-
-  return {
-    objectId: new ObjectId(id),
-    orderNumber,
-  };
-}
 
 export async function PATCH(
   request: Request,
@@ -44,9 +24,13 @@ export async function PATCH(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const resolved = await resolveParams(context);
+    const resolved = await resolveResultParams(context);
+
     if (!resolved) {
-      return Response.json({ error: "Invalid result reference." }, { status: 400 });
+      return Response.json(
+        { error: "Invalid result reference." },
+        { status: 400 },
+      );
     }
 
     const body = await request.json();
@@ -60,13 +44,17 @@ export async function PATCH(
     }
 
     const db = await getDb();
-    const existingSeries = await db.collection("series").findOne({ _id: resolved.objectId });
+    const existingSeries = await db
+      .collection("series")
+      .findOne({ _id: resolved.objectId });
 
     if (!existingSeries) {
       return Response.json({ error: "Series not found." }, { status: 404 });
     }
 
-    const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+    const serialized = serializeSeries(
+      existingSeries as Record<string, unknown>,
+    );
 
     if (serialized.locked) {
       return Response.json(
@@ -75,7 +63,9 @@ export async function PATCH(
       );
     }
 
-    const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
+    const existingResult = serialized.results.find(
+      (result) => result.order === resolved.orderNumber,
+    );
 
     if (!existingResult) {
       return Response.json({ error: "Result not found." }, { status: 404 });
@@ -84,7 +74,11 @@ export async function PATCH(
     if (
       serialized.bracket &&
       serialized.overallScore.completed &&
-      (await hasLaterRoundBracketSeries(db, serialized.bracket.id, serialized.bracket.round))
+      (await hasLaterRoundBracketSeries(
+        db,
+        serialized.bracket.id,
+        serialized.bracket.round,
+      ))
     ) {
       return Response.json(
         {
@@ -109,22 +103,27 @@ export async function PATCH(
       },
     );
 
-    const updated = await db.collection("series").findOne({ _id: resolved.objectId });
-    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+    const updated = await db
+      .collection("series")
+      .findOne({ _id: resolved.objectId });
+    const serializedUpdated = serializeSeries(
+      updated as Record<string, unknown>,
+    );
 
     if (serializedUpdated.bracket) {
       await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
     }
 
-    return Response.json({
-      series: serializedUpdated,
-    });
+    return Response.json({ series: serializedUpdated });
   } catch (error) {
     if (error instanceof BracketSeriesConflictError) {
       return Response.json({ error: error.message }, { status: 409 });
     }
     logApiError("PATCH /api/series/[id]/results/[order]", error);
-    return Response.json({ error: "Failed to update result." }, { status: 500 });
+    return Response.json(
+      { error: "Failed to update result." },
+      { status: 500 },
+    );
   }
 }
 
@@ -139,19 +138,27 @@ export async function DELETE(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const resolved = await resolveParams(context);
+    const resolved = await resolveResultParams(context);
+
     if (!resolved) {
-      return Response.json({ error: "Invalid result reference." }, { status: 400 });
+      return Response.json(
+        { error: "Invalid result reference." },
+        { status: 400 },
+      );
     }
 
     const db = await getDb();
-    const existingSeries = await db.collection("series").findOne({ _id: resolved.objectId });
+    const existingSeries = await db
+      .collection("series")
+      .findOne({ _id: resolved.objectId });
 
     if (!existingSeries) {
       return Response.json({ error: "Series not found." }, { status: 404 });
     }
 
-    const serialized = serializeSeries(existingSeries as Record<string, unknown>);
+    const serialized = serializeSeries(
+      existingSeries as Record<string, unknown>,
+    );
 
     if (serialized.locked) {
       return Response.json(
@@ -160,7 +167,9 @@ export async function DELETE(
       );
     }
 
-    const existingResult = serialized.results.find((result) => result.order === resolved.orderNumber);
+    const existingResult = serialized.results.find(
+      (result) => result.order === resolved.orderNumber,
+    );
 
     if (!existingResult) {
       return Response.json({ error: "Result not found." }, { status: 404 });
@@ -169,7 +178,11 @@ export async function DELETE(
     if (
       serialized.bracket &&
       serialized.overallScore.completed &&
-      (await hasLaterRoundBracketSeries(db, serialized.bracket.id, serialized.bracket.round))
+      (await hasLaterRoundBracketSeries(
+        db,
+        serialized.bracket.id,
+        serialized.bracket.round,
+      ))
     ) {
       return Response.json(
         {
@@ -180,32 +193,31 @@ export async function DELETE(
       );
     }
 
-    await db.collection("series").updateOne(
-      { _id: resolved.objectId },
-      {
-        $pull: { results: { order: resolved.orderNumber } },
-        $set: {
-          updatedAt: new Date(),
-          updatedBy: admin,
-        },
-      } as never,
-    );
+    await db.collection("series").updateOne({ _id: resolved.objectId }, {
+      $pull: { results: { order: resolved.orderNumber } },
+      $set: { updatedAt: new Date(), updatedBy: admin },
+    } as never);
 
-    const updated = await db.collection("series").findOne({ _id: resolved.objectId });
-    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+    const updated = await db
+      .collection("series")
+      .findOne({ _id: resolved.objectId });
+    const serializedUpdated = serializeSeries(
+      updated as Record<string, unknown>,
+    );
 
     if (serializedUpdated.bracket) {
       await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
     }
 
-    return Response.json({
-      series: serializedUpdated,
-    });
+    return Response.json({ series: serializedUpdated });
   } catch (error) {
     if (error instanceof BracketSeriesConflictError) {
       return Response.json({ error: error.message }, { status: 409 });
     }
     logApiError("DELETE /api/series/[id]/results/[order]", error);
-    return Response.json({ error: "Failed to delete result." }, { status: 500 });
+    return Response.json(
+      { error: "Failed to delete result." },
+      { status: 500 },
+    );
   }
 }

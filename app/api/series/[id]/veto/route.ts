@@ -1,24 +1,13 @@
 import { ObjectId } from "mongodb";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
+import { resolveSeriesParams } from "@/lib/api-helpers";
 import { getDb } from "@/lib/mongodb";
 import { serializeSeries } from "@/lib/series";
 import { applyVetoAction, deriveVetoState } from "@/lib/veto-engine";
 import { seriesVetoSetupSchema, vetoActionSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
-
-async function resolveId(
-  context: { params: Promise<{ id: string }> },
-): Promise<ObjectId | null> {
-  const { id } = await context.params;
-
-  if (!ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return new ObjectId(id);
-}
 
 export async function POST(
   request: Request,
@@ -31,7 +20,8 @@ export async function POST(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const objectId = await resolveId(context);
+    const objectId = await resolveSeriesParams(context);
+
     if (!objectId) {
       return Response.json({ error: "Invalid series id." }, { status: 400 });
     }
@@ -112,7 +102,8 @@ export async function PATCH(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const objectId = await resolveId(context);
+    const objectId = await resolveSeriesParams(context);
+
     if (!objectId) {
       return Response.json({ error: "Invalid series id." }, { status: 400 });
     }
@@ -144,7 +135,10 @@ export async function PATCH(
     }
 
     if (!series.veto) {
-      return Response.json({ error: "Veto has not been started yet." }, { status: 400 });
+      return Response.json(
+        { error: "Veto has not been started yet." },
+        { status: 400 },
+      );
     }
 
     if (series.results.length > 0) {
@@ -163,12 +157,14 @@ export async function PATCH(
       },
       parsed.data,
     );
+
     const derived = deriveVetoState({
       format: series.format,
       vetoStarter: series.vetoStarter,
       mapPool: series.veto.mapPool,
       actions: nextActions,
     });
+
     const now = new Date();
 
     await db.collection("series").updateOne(
@@ -194,7 +190,8 @@ export async function PATCH(
     logApiError("PATCH /api/series/[id]/veto", error);
     return Response.json(
       {
-        error: error instanceof Error ? error.message : "Failed to update veto.",
+        error:
+          error instanceof Error ? error.message : "Failed to update veto.",
       },
       { status: 400 },
     );

@@ -7,6 +7,7 @@ import {
 } from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
+import { resolveBracketParams } from "@/lib/api-helpers";
 import { normalizeBracketTeams, serializeBracket } from "@/lib/brackets";
 import { getDb } from "@/lib/mongodb";
 import { slugifyTeamName } from "@/lib/series";
@@ -14,22 +15,12 @@ import { bracketUpdateSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
 
-async function resolveId(context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params;
-
-  if (!ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return new ObjectId(id);
-}
-
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const objectId = await resolveId(context);
+    const objectId = await resolveBracketParams(context);
 
     if (!objectId) {
       return Response.json({ error: "Invalid bracket id." }, { status: 400 });
@@ -66,7 +57,7 @@ export async function PATCH(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const objectId = await resolveId(context);
+    const objectId = await resolveBracketParams(context);
 
     if (!objectId) {
       return Response.json({ error: "Invalid bracket id." }, { status: 400 });
@@ -91,9 +82,14 @@ export async function PATCH(
 
     const serialized = serializeBracket(existing as Record<string, unknown>);
 
-    if (parsed.data.teams && parsed.data.teams.length !== serialized.teamCount) {
+    if (
+      parsed.data.teams &&
+      parsed.data.teams.length !== serialized.teamCount
+    ) {
       return Response.json(
-        { error: `This bracket requires exactly ${serialized.teamCount} teams.` },
+        {
+          error: `This bracket requires exactly ${serialized.teamCount} teams.`,
+        },
         { status: 400 },
       );
     }
@@ -103,9 +99,12 @@ export async function PATCH(
       : serialized.teams;
     const teamsChanged =
       parsed.data.teams !== undefined &&
-      nextTeams.some((entry, index) => entry.name !== serialized.teams[index]?.name);
+      nextTeams.some(
+        (entry, index) => entry.name !== serialized.teams[index]?.name,
+      );
     const formatChanged =
-      parsed.data.format !== undefined && parsed.data.format !== serialized.format;
+      parsed.data.format !== undefined &&
+      parsed.data.format !== serialized.format;
     const linkedSeries = await loadBracketLinkedSeries(db, String(objectId));
 
     if (
@@ -124,7 +123,10 @@ export async function PATCH(
 
     if ((teamsChanged || formatChanged) && serialized.locked) {
       return Response.json(
-        { error: "This bracket is frozen. Unfreeze it before changing teams or format." },
+        {
+          error:
+            "This bracket is frozen. Unfreeze it before changing teams or format.",
+        },
         { status: 409 },
       );
     }
@@ -154,10 +156,9 @@ export async function PATCH(
       updatePayload.manualResolutions = [];
     }
 
-    await db.collection("brackets").updateOne(
-      { _id: objectId },
-      { $set: updatePayload },
-    );
+    await db
+      .collection("brackets")
+      .updateOne({ _id: objectId }, { $set: updatePayload });
 
     const updated = await db.collection("brackets").findOne({ _id: objectId });
 
@@ -165,8 +166,16 @@ export async function PATCH(
       return Response.json({ error: "Bracket not found." }, { status: 404 });
     }
 
-    await syncBracketSeries(db, serializeBracket(updated as Record<string, unknown>), admin);
-    const refreshedLinkedSeries = await loadBracketLinkedSeries(db, String(objectId));
+    await syncBracketSeries(
+      db,
+      serializeBracket(updated as Record<string, unknown>),
+      admin,
+    );
+
+    const refreshedLinkedSeries = await loadBracketLinkedSeries(
+      db,
+      String(objectId),
+    );
 
     return Response.json({
       bracket: serializeBracket(updated as Record<string, unknown>, {
@@ -178,7 +187,10 @@ export async function PATCH(
       return Response.json({ error: error.message }, { status: 409 });
     }
     logApiError("PATCH /api/brackets/[id]", error);
-    return Response.json({ error: "Failed to update bracket." }, { status: 500 });
+    return Response.json(
+      { error: "Failed to update bracket." },
+      { status: 500 },
+    );
   }
 }
 
@@ -193,15 +205,20 @@ export async function DELETE(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const objectId = await resolveId(context);
+    const objectId = await resolveBracketParams(context);
 
     if (!objectId) {
       return Response.json({ error: "Invalid bracket id." }, { status: 400 });
     }
 
     const db = await getDb();
-    await db.collection("series").deleteMany({ "bracket.id": String(objectId) });
-    const deletion = await db.collection("brackets").deleteOne({ _id: objectId });
+    await db
+      .collection("series")
+      .deleteMany({ "bracket.id": String(objectId) });
+
+    const deletion = await db
+      .collection("brackets")
+      .deleteOne({ _id: objectId });
 
     if (deletion.deletedCount === 0) {
       return Response.json({ error: "Bracket not found." }, { status: 404 });
@@ -210,6 +227,9 @@ export async function DELETE(
     return Response.json({ ok: true });
   } catch (error) {
     logApiError("DELETE /api/brackets/[id]", error);
-    return Response.json({ error: "Failed to delete bracket." }, { status: 500 });
+    return Response.json(
+      { error: "Failed to delete bracket." },
+      { status: 500 },
+    );
   }
 }

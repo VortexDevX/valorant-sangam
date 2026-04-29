@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { getDb } from "@/lib/mongodb";
 
 const encoder = new TextEncoder();
+const TOKEN_EXPIRY = "8h";
 
 function getJwtSecret() {
   const secret = process.env.AUTH_JWT_SECRET;
@@ -16,9 +17,9 @@ function getJwtSecret() {
 
 export async function verifyPassword(username: string, password: string) {
   const db = await getDb();
-  const admin = await db.collection("admins").findOne<{ passwordHash: string }>({
-    username,
-  });
+  const admin = await db
+    .collection("admins")
+    .findOne<{ passwordHash: string }>({ username });
 
   if (!admin) {
     return false;
@@ -31,6 +32,7 @@ export async function createAdminToken(username: string) {
   return new SignJWT({ sub: username, role: "admin" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
+    .setExpirationTime(TOKEN_EXPIRY)
     .sign(getJwtSecret());
 }
 

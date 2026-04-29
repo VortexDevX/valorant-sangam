@@ -5,14 +5,21 @@ import {
   SingleEliminationBracket,
   createTheme,
 } from "@g-loot/react-tournament-brackets";
-import type { BracketMatchRecord, BracketRecord, BracketSlotRecord } from "@/types/bracket";
+import type {
+  BracketMatchRecord,
+  BracketRecord,
+  BracketSlotRecord,
+} from "@/types/bracket";
 
 interface BracketBoardProps {
   bracket: BracketRecord;
   busy?: boolean;
   editable?: boolean;
-  onEditTeamName?: (seed: number, name: string) => void;
-  onPickWinner?: (round: number, match: number, winnerSeed: number | null) => Promise<void> | void;
+  onPickWinner?: (
+    round: number,
+    match: number,
+    winnerSeed: number | null,
+  ) => Promise<void> | void;
 }
 
 type BaseMatch = {
@@ -59,34 +66,46 @@ type BracketWrapperProps = {
   children: ReactNode;
 };
 
+const COLORS = {
+  accent: "#ff4655",
+  accentBorder: "rgba(255,179,178,0.18)",
+  accentBorderStrong: "rgba(255,179,178,0.82)",
+  accentBorderHover: "rgba(255,179,178,0.82)",
+  winnerBg: "rgba(107,22,29,0.96)",
+  winnerGradient:
+    "linear-gradient(135deg, rgba(107,22,29,0.96), rgba(255,70,85,0.28))",
+  rowDefault: "rgba(18,28,39,0.92)",
+  shell:
+    "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)), rgba(5,15,25,0.96)",
+  textPrimary: "#d9e3f2",
+  textMuted: "rgba(185,198,213,0.62)",
+  textAccent: "#ffb3b2",
+  textSuccess: "#60dcb0",
+  textGold: "#ffe0ab",
+  connector: "rgba(255,179,178,0.28)",
+  connectorHighlight: "rgba(255,179,178,0.82)",
+} as const;
+
 const bracketTheme = createTheme({
   fontFamily: "var(--font-display), sans-serif",
-  roundHeaders: {
-    background: "rgba(255, 70, 85, 0.16)",
-  },
+  roundHeaders: { background: "rgba(255, 70, 85, 0.16)" },
   textColor: {
     highlighted: "#fff0f0",
-    main: "#d9e3f2",
+    main: COLORS.textPrimary,
     dark: "#9caec2",
     disabled: "#5d6d80",
   },
-  matchBackground: {
-    wonColor: "#6b161d",
-    lostColor: "#121c27",
-  },
+  matchBackground: { wonColor: "#6b161d", lostColor: "#121c27" },
   border: {
-    color: "rgba(255, 179, 178, 0.18)",
-    highlightedColor: "rgba(255, 179, 178, 0.8)",
+    color: COLORS.accentBorder,
+    highlightedColor: COLORS.accentBorderStrong,
   },
   score: {
     text: {
       highlightedWonColor: "#fff0f0",
-      highlightedLostColor: "#ffb3b2",
+      highlightedLostColor: COLORS.textAccent,
     },
-    background: {
-      wonColor: "#ff4655",
-      lostColor: "#2c3641",
-    },
+    background: { wonColor: COLORS.accent, lostColor: "#2c3641" },
   },
   canvasBackground: "#050f19",
 });
@@ -139,10 +158,16 @@ function toTournamentMatches(bracket: BracketRecord): TournamentMatch[] {
       id: `${match.round}-${match.match}`,
       name: round.label,
       nextMatchId:
-        roundIndex === totalRounds - 1 ? null : `${match.round + 1}-${Math.ceil(match.match / 2)}`,
+        roundIndex === totalRounds - 1
+          ? null
+          : `${match.round + 1}-${Math.ceil(match.match / 2)}`,
       tournamentRoundText: round.label,
       startTime: "",
-      state: match.autoAdvanced ? "WALK_OVER" : match.isComplete ? "DONE" : "NO_PARTY",
+      state: match.autoAdvanced
+        ? "WALK_OVER"
+        : match.isComplete
+          ? "DONE"
+          : "NO_PARTY",
       participants: [
         buildParticipant(match.top, match, "top"),
         buildParticipant(match.bottom, match, "bottom"),
@@ -160,11 +185,19 @@ function toTournamentMatches(bracket: BracketRecord): TournamentMatch[] {
 }
 
 function slotLabel(participant: TournamentParticipant, fallback: string) {
-  if (participant.isBye) {
-    return "BYE";
-  }
-
+  if (participant.isBye) return "BYE";
   return participant.name || fallback;
+}
+
+function labelStyle(color: string): CSSProperties {
+  return {
+    color,
+    fontFamily: "var(--font-display), sans-serif",
+    fontSize: "0.62rem",
+    fontWeight: 800,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+  };
 }
 
 function BracketMatchCard({
@@ -180,35 +213,34 @@ function BracketMatchCard({
   busy: boolean;
   onPickWinner?: BracketBoardProps["onPickWinner"];
 }) {
-  const typedMatch = match as TournamentMatch;
-  const topParticipant = topParty as TournamentParticipant;
-  const bottomParticipant = bottomParty as TournamentParticipant;
   const canPickTop =
     editable &&
-    typedMatch.canPickWinner &&
-    !topParticipant.isBye &&
-    typeof topParticipant.seed === "number";
+    match.canPickWinner &&
+    !topParty.isBye &&
+    typeof topParty.seed === "number";
   const canPickBottom =
     editable &&
-    typedMatch.canPickWinner &&
-    !bottomParticipant.isBye &&
-    typeof bottomParticipant.seed === "number";
-  const statusLabel = typedMatch.autoAdvanced
+    match.canPickWinner &&
+    !bottomParty.isBye &&
+    typeof bottomParty.seed === "number";
+
+  const statusLabel = match.autoAdvanced
     ? "Auto Advance"
-    : typedMatch.winnerSource === "series"
+    : match.winnerSource === "series"
       ? "Series Result"
-      : typedMatch.winnerSource === "continuation"
+      : match.winnerSource === "continuation"
         ? "Continuation"
-      : typedMatch.seriesId
-        ? "Linked Series"
-        : typedMatch.winnerSeed
-          ? "Completed"
-          : "Live";
+        : match.seriesId
+          ? "Linked Series"
+          : match.winnerSeed
+            ? "Completed"
+            : "Live";
+
   const winnerName =
-    typedMatch.winnerSeed === topParticipant.seed
-      ? slotLabel(topParticipant, teamNameFallback)
-      : typedMatch.winnerSeed === bottomParticipant.seed
-        ? slotLabel(bottomParticipant, teamNameFallback)
+    match.winnerSeed === topParty.seed
+      ? slotLabel(topParty, teamNameFallback)
+      : match.winnerSeed === bottomParty.seed
+        ? slotLabel(bottomParty, teamNameFallback)
         : null;
 
   const shellStyle: CSSProperties = {
@@ -219,17 +251,17 @@ function BracketMatchCard({
     justifyContent: "space-between",
     gap: "0.55rem",
     padding: "0.7rem",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)), rgba(5,15,25,0.96)",
-    border: "1px solid rgba(255,179,178,0.14)",
+    background: COLORS.shell,
+    border: `1px solid ${COLORS.accentBorder}`,
     boxShadow: "0 18px 30px rgba(0,0,0,0.24)",
   };
 
   function rowStyle(participant: TournamentParticipant): CSSProperties {
-    const isWinner = typedMatch.winnerSeed !== null && participant.seed === typedMatch.winnerSeed;
+    const isWinner =
+      match.winnerSeed !== null && participant.seed === match.winnerSeed;
     const clickable =
       editable &&
-      typedMatch.canPickWinner &&
+      match.canPickWinner &&
       !participant.isBye &&
       typeof participant.seed === "number";
 
@@ -239,14 +271,14 @@ function BracketMatchCard({
       alignItems: "stretch",
       minHeight: "3.5rem",
       border: isWinner
-        ? "1px solid rgba(255,179,178,0.82)"
-        : "1px solid rgba(255,179,178,0.14)",
+        ? `1px solid ${COLORS.accentBorderStrong}`
+        : `1px solid ${COLORS.accentBorder}`,
       background: participant.isBye
         ? "rgba(255,255,255,0.04)"
         : isWinner
-          ? "linear-gradient(135deg, rgba(107,22,29,0.96), rgba(255,70,85,0.28))"
-          : "rgba(18,28,39,0.92)",
-      color: participant.isBye ? "rgba(185,198,213,0.56)" : "#d9e3f2",
+          ? COLORS.winnerGradient
+          : COLORS.rowDefault,
+      color: participant.isBye ? "rgba(185,198,213,0.56)" : COLORS.textPrimary,
       transition: "border-color 120ms ease, transform 120ms ease",
       cursor: clickable ? "pointer" : "default",
     };
@@ -258,7 +290,7 @@ function BracketMatchCard({
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      borderLeft: "1px solid rgba(255,179,178,0.14)",
+      borderLeft: `1px solid ${COLORS.accentBorder}`,
       background: active ? "rgba(255,70,85,0.12)" : "transparent",
       color: active ? "#fff0f0" : "rgba(255,179,178,0.66)",
       fontFamily: "var(--font-display), sans-serif",
@@ -267,6 +299,65 @@ function BracketMatchCard({
       letterSpacing: "0.12em",
       textTransform: "uppercase",
     };
+  }
+
+  function makeParticipantRow(
+    participant: TournamentParticipant,
+    canPick: boolean,
+  ) {
+    return (
+      <button
+        disabled={busy || !canPick}
+        onClick={() => {
+          if (typeof participant.seed === "number") {
+            void onPickWinner?.(
+              match.metaRound,
+              match.metaMatch,
+              participant.seed,
+            );
+          }
+        }}
+        style={rowStyle(participant)}
+        type="button"
+      >
+        <div style={{ minWidth: 0, padding: "0.55rem 0.7rem" }}>
+          <div
+            style={{
+              color: COLORS.textMuted,
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "0.54rem",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            {participant.isBye
+              ? "BYE"
+              : participant.seed
+                ? `Seed ${participant.seed}`
+                : "Pending"}
+          </div>
+          <div
+            style={{
+              marginTop: "0.18rem",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontFamily: "var(--font-display), sans-serif",
+              fontSize: "1rem",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              textTransform: "uppercase",
+            }}
+          >
+            {slotLabel(participant, teamNameFallback)}
+          </div>
+        </div>
+        <div style={actionStyle(match.winnerSeed === participant.seed)}>
+          {match.winnerSeed === participant.seed ? "W" : canPick ? "Pick" : "–"}
+        </div>
+      </button>
+    );
   }
 
   return (
@@ -279,241 +370,73 @@ function BracketMatchCard({
           gap: "0.75rem",
         }}
       >
-        <span
-          style={{
-            color: "#ffb3b2",
-            fontFamily: "var(--font-display), sans-serif",
-            fontSize: "0.64rem",
-            fontWeight: 800,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-          }}
-        >
-          Match {typedMatch.metaMatch}
+        <span style={labelStyle(COLORS.textAccent)}>
+          Match {match.metaMatch}
         </span>
         <span
-          style={{
-            color:
-              typedMatch.autoAdvanced
-                ? "#60dcb0"
-                : typedMatch.winnerSource === "series"
-                  ? "#ffb3b2"
-                  : typedMatch.seriesId
-                    ? "#9caec2"
-                    : "#7b8d9f",
-            fontFamily: "var(--font-display), sans-serif",
-            fontSize: "0.58rem",
-            fontWeight: 800,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-          }}
+          style={labelStyle(
+            match.autoAdvanced
+              ? COLORS.textSuccess
+              : match.winnerSource === "series"
+                ? COLORS.textAccent
+                : match.seriesId
+                  ? COLORS.textPrimary
+                  : "#7b8d9f",
+          )}
         >
           {statusLabel}
         </span>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-        <button
-          disabled={busy || !canPickTop}
-          onClick={() => {
-            if (typeof topParticipant.seed === "number") {
-              void onPickWinner?.(typedMatch.metaRound, typedMatch.metaMatch, topParticipant.seed);
-            }
-          }}
-          style={rowStyle(topParticipant)}
-          type="button"
-        >
-          <div style={{ minWidth: 0, padding: "0.55rem 0.7rem" }}>
-            <div
-              style={{
-                color: "rgba(185,198,213,0.62)",
-                fontFamily: "var(--font-display), sans-serif",
-                fontSize: "0.54rem",
-                fontWeight: 800,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-              }}
-            >
-              {topParticipant.isBye
-                ? "BYE"
-                : topParticipant.seed
-                  ? `Seed ${topParticipant.seed}`
-                  : "Pending"}
-            </div>
-            <div
-              style={{
-                marginTop: "0.18rem",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontFamily: "var(--font-display), sans-serif",
-                fontSize: "1rem",
-                fontWeight: 800,
-                letterSpacing: "-0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              {slotLabel(topParticipant, teamNameFallback)}
-            </div>
-          </div>
-          <div style={actionStyle(typedMatch.winnerSeed === topParticipant.seed)}>
-            {typedMatch.winnerSeed === topParticipant.seed ? "W" : canPickTop ? "Pick" : "-"}
-          </div>
-        </button>
-
-        <button
-          disabled={busy || !canPickBottom}
-          onClick={() => {
-            if (typeof bottomParticipant.seed === "number") {
-              void onPickWinner?.(typedMatch.metaRound, typedMatch.metaMatch, bottomParticipant.seed);
-            }
-          }}
-          style={rowStyle(bottomParticipant)}
-          type="button"
-        >
-          <div style={{ minWidth: 0, padding: "0.55rem 0.7rem" }}>
-            <div
-              style={{
-                color: "rgba(185,198,213,0.62)",
-                fontFamily: "var(--font-display), sans-serif",
-                fontSize: "0.54rem",
-                fontWeight: 800,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-              }}
-            >
-              {bottomParticipant.isBye
-                ? "BYE"
-                : bottomParticipant.seed
-                  ? `Seed ${bottomParticipant.seed}`
-                  : "Pending"}
-            </div>
-            <div
-              style={{
-                marginTop: "0.18rem",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontFamily: "var(--font-display), sans-serif",
-                fontSize: "1rem",
-                fontWeight: 800,
-                letterSpacing: "-0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              {slotLabel(bottomParticipant, teamNameFallback)}
-            </div>
-          </div>
-          <div style={actionStyle(typedMatch.winnerSeed === bottomParticipant.seed)}>
-            {typedMatch.winnerSeed === bottomParticipant.seed ? "W" : canPickBottom ? "Pick" : "-"}
-          </div>
-        </button>
+        {makeParticipantRow(topParty, canPickTop)}
+        {makeParticipantRow(bottomParty, canPickBottom)}
       </div>
 
       <div style={{ minHeight: "1.1rem" }}>
-        {typedMatch.autoAdvanced ? (
-          <span
-            style={{
-              color: "#60dcb0",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
-            Advanced automatically because the opposing slot is a BYE.
+        {match.autoAdvanced ? (
+          <span style={labelStyle(COLORS.textSuccess)}>
+            Advanced automatically — opposing slot is a BYE.
           </span>
-        ) : typedMatch.winnerSource === "series" && winnerName ? (
-          <span
-            style={{
-              color: "#ffb3b2",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
-            {typedMatch.seriesScore
-              ? `${winnerName} advanced from the linked series (${typedMatch.seriesScore}).`
-              : `${winnerName} advanced from the linked series result.`}
+        ) : match.winnerSource === "series" && winnerName ? (
+          <span style={labelStyle(COLORS.textAccent)}>
+            {match.seriesScore
+              ? `${winnerName} advanced via linked series (${match.seriesScore}).`
+              : `${winnerName} advanced via linked series.`}
           </span>
-        ) : typedMatch.winnerSource === "continuation" && winnerName ? (
-          <span
-            style={{
-              color: "#ffe0ab",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
-            {typedMatch.seriesScore
-              ? `${winnerName} advanced from a manual continuation series (${typedMatch.seriesScore}).`
-              : `${winnerName} advanced from a manual continuation series.`}
+        ) : match.winnerSource === "continuation" && winnerName ? (
+          <span style={labelStyle(COLORS.textGold)}>
+            {match.seriesScore
+              ? `${winnerName} advanced via manual continuation (${match.seriesScore}).`
+              : `${winnerName} advanced via manual continuation.`}
           </span>
-        ) : typedMatch.seriesId ? (
-          <span
-            style={{
-              color: "#9caec2",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            Complete the linked series to advance this match.
+        ) : match.seriesId ? (
+          <span style={labelStyle("#9caec2")}>
+            Complete the linked series to advance.
           </span>
-        ) : editable && typedMatch.canPickWinner && typedMatch.winnerSeed !== null ? (
+        ) : editable && match.canPickWinner && match.winnerSeed !== null ? (
           <button
             disabled={busy}
-            onClick={() => {
-              void onPickWinner?.(typedMatch.metaRound, typedMatch.metaMatch, null);
-            }}
+            onClick={() =>
+              void onPickWinner?.(match.metaRound, match.metaMatch, null)
+            }
             style={{
               border: "none",
               background: "transparent",
               padding: 0,
-              color: "#b9c6d5",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
+              ...labelStyle(COLORS.textPrimary),
+              cursor: "pointer",
             }}
             type="button"
           >
             Clear Winner
           </button>
-        ) : typedMatch.winnerSource === "manual" && winnerName ? (
-          <span
-            style={{
-              color: "#b9c6d5",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
+        ) : match.winnerSource === "manual" && winnerName ? (
+          <span style={labelStyle(COLORS.textPrimary)}>
             {winnerName} was advanced manually.
           </span>
-        ) : !typedMatch.canPickWinner && !typedMatch.autoAdvanced && !typedMatch.winnerSeed ? (
-          <span
-            style={{
-              color: "#7b8d9f",
-              fontFamily: "var(--font-display), sans-serif",
-              fontSize: "0.62rem",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            Waiting For Matchup
-          </span>
+        ) : !match.canPickWinner && !match.autoAdvanced && !match.winnerSeed ? (
+          <span style={labelStyle("#7b8d9f")}>Waiting for matchup</span>
         ) : null}
       </div>
     </div>
@@ -538,15 +461,20 @@ export function BracketBoard({
               {bracket.title}
             </h2>
           </div>
-        <div className="flex flex-wrap gap-3">
-          <span className="tactical-chip text-[var(--text-secondary)]">{bracket.teamCount} teams</span>
-          <span className="tactical-chip text-[var(--text-secondary)]">{bracket.format}</span>
-          {bracket.championName ? (
-            <span className="tactical-chip text-[var(--success)]">Champion: {bracket.championName}</span>
-          ) : null}
+          <div className="flex flex-wrap gap-3">
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              {bracket.teamCount} teams
+            </span>
+            <span className="tactical-chip text-[var(--text-secondary)]">
+              {bracket.format}
+            </span>
+            {bracket.championName ? (
+              <span className="tactical-chip text-[var(--success)]">
+                Champion: {bracket.championName}
+              </span>
+            ) : null}
           </div>
         </div>
-
         <div className="bracket-engine-empty">
           <div className="font-display text-[0.72rem] font-black uppercase tracking-[0.18em] text-[var(--text-accent)]">
             Direct Champion
@@ -567,11 +495,7 @@ export function BracketBoard({
           <h2 className="mt-2 font-display text-3xl font-black uppercase tracking-[-0.05em]">
             {bracket.title}
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-            Powered by a tournament layout engine now, with the Valorant presentation layered on top.
-          </p>
         </div>
-
         <div className="flex flex-wrap gap-3">
           <span className="tactical-chip text-[var(--text-accent)]">
             {bracket.status.replaceAll("_", " ")}
@@ -619,8 +543,8 @@ export function BracketBoard({
                 roundTextGenerator: (currentRoundNumber: number) =>
                   bracket.rounds[currentRoundNumber - 1]?.label,
               },
-              connectorColor: "rgba(255, 179, 178, 0.28)",
-              connectorColorHighlight: "rgba(255, 179, 178, 0.82)",
+              connectorColor: COLORS.connector,
+              connectorColorHighlight: COLORS.connectorHighlight,
             },
           }}
           svgWrapper={({ children, ...props }: BracketWrapperProps) => (

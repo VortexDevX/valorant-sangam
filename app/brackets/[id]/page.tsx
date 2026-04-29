@@ -1,65 +1,55 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import { BracketBoard } from "@/components/bracket-board";
 import { PublicTopbar } from "@/components/public-topbar";
-import { StatusToasts } from "@/components/status-toasts";
-import type { BracketRecord } from "@/types/bracket";
+import { getBracketById } from "@/lib/data";
+import type { Metadata } from "next";
 
-export default function BracketPage() {
-  const params = useParams<{ id: string }>();
-  const [bracket, setBracket] = useState<BracketRecord | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const loadBracket = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+interface Props {
+  params: Promise<{ id: string }>;
+}
 
-        const response = await fetch(`/api/brackets/${params.id}`, { cache: "no-store" });
-        const payload = await response.json();
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const bracket = await getBracketById(id);
 
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Failed to load bracket.");
-        }
+  if (!bracket) {
+    return { title: "Bracket Not Found — Valorant Circuit" };
+  }
 
-        setBracket(payload.bracket);
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Failed to load bracket.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  return {
+    title: `${bracket.title} — Valorant Circuit`,
+  };
+}
 
-    void loadBracket();
-  }, [params.id]);
+export default async function BracketPage({ params }: Props) {
+  const { id } = await params;
+  const bracket = await getBracketById(id);
+
+  if (!bracket) {
+    notFound();
+  }
 
   return (
     <main className="app-shell">
-      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
-      <PublicTopbar active="brackets" statusLabel="Bracket View" />
+      <PublicTopbar statusLabel="Bracket View" />
       <div className="page-wrap space-y-10">
         <section className="space-y-4">
-          <Link className="eyebrow" href="/">
-            Back To Home
+          <Link
+            className="inline-flex items-center gap-2 font-display text-[0.76rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
+            href="/#brackets"
+          >
+            <span aria-hidden="true">←</span> All Brackets
           </Link>
-          <h1 className="page-title">{bracket?.title ?? "Bracket"}</h1>
+          <h1 className="page-title">{bracket.title}</h1>
           <p className="page-subtitle">
             Full single-elimination bracket for this tournament stage.
           </p>
         </section>
 
-        {loading ? (
-          <div className="status-info">Loading bracket...</div>
-        ) : !bracket ? (
-          <div className="empty-state">Bracket not found.</div>
-        ) : (
-          <BracketBoard bracket={bracket} />
-        )}
+        <BracketBoard bracket={bracket} />
       </div>
     </main>
   );

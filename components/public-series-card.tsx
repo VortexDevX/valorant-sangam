@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MAP_LOOKUP } from "@/lib/map-pool";
+import { getSeriesStatusLabel } from "@/lib/format";
 import { createBracketSeriesSummary, getNextSeriesMap } from "@/lib/series";
 import type { SeriesRecord } from "@/types/series";
 
@@ -13,33 +14,25 @@ interface PublicSeriesCardProps {
   withMapBackdrop?: boolean;
 }
 
-function getScoreTone(series: SeriesRecord, focusTeamSlug: string | undefined, winner: SeriesRecord["results"][number]["winner"]) {
-  if (!focusTeamSlug) {
-    return "text-[var(--text-accent)]";
-  }
+function getScoreTone(
+  series: SeriesRecord,
+  focusTeamSlug: string | undefined,
+  winner: SeriesRecord["results"][number]["winner"],
+) {
+  if (!focusTeamSlug) return "text-[var(--text-accent)]";
 
-  const focusSlot = focusTeamSlug === series.teamASlug ? "teamA" : focusTeamSlug === series.teamBSlug ? "teamB" : null;
+  const focusSlot =
+    focusTeamSlug === series.teamASlug
+      ? "teamA"
+      : focusTeamSlug === series.teamBSlug
+        ? "teamB"
+        : null;
 
-  if (!focusSlot) {
-    return "text-[var(--text-accent)]";
-  }
+  if (!focusSlot) return "text-[var(--text-accent)]";
 
-  return winner === focusSlot ? "text-[var(--success)]" : "text-[var(--bg-accent)]";
-}
-
-function getSeriesStatusLabel(status: SeriesRecord["status"]) {
-  switch (status) {
-    case "scheduled":
-      return "upcoming";
-    case "veto_in_progress":
-      return "veto in progress";
-    case "veto_completed":
-      return "ready for results";
-    case "completed":
-      return "completed";
-    default:
-      return String(status).replaceAll("_", " ");
-  }
+  return winner === focusSlot
+    ? "text-[var(--success)]"
+    : "text-[var(--bg-accent)]";
 }
 
 export function PublicSeriesCard({
@@ -87,7 +80,7 @@ export function PublicSeriesCard({
           ) : null}
           {series.results.length > 0 ? (
             <span className="tactical-chip text-[var(--success)]">
-              {series.overallScore.teamA}-{series.overallScore.teamB}
+              {series.overallScore.teamA}–{series.overallScore.teamB}
             </span>
           ) : null}
         </div>
@@ -113,15 +106,16 @@ export function PublicSeriesCard({
         {series.veto?.status === "completed" ? (
           <div className="flex flex-wrap gap-2">
             {series.veto.result.maps.map((map) => (
-              <span key={map.order} className="tactical-chip text-[var(--text-secondary)]">
+              <span
+                key={map.order}
+                className="tactical-chip text-[var(--text-secondary)]"
+              >
                 {map.order}. {MAP_LOOKUP[map.map].label}
               </span>
             ))}
           </div>
         ) : (
-          <p className="public-card-copy">
-            Map veto is not finished yet.
-          </p>
+          <p className="public-card-copy">Map veto not finished yet.</p>
         )}
 
         {series.results.length > 0 ? (
@@ -140,11 +134,7 @@ export function PublicSeriesCard({
                   </span>
                 </div>
                 <span
-                  className={`font-display text-sm font-black uppercase tracking-[0.08em] sm:text-base md:text-lg ${getScoreTone(
-                    series,
-                    focusTeamSlug,
-                    result.winner,
-                  )}`}
+                  className={`font-display text-sm font-black uppercase tracking-[0.08em] sm:text-base md:text-lg ${getScoreTone(series, focusTeamSlug, result.winner)}`}
                 >
                   {result.score}
                 </span>
@@ -152,7 +142,8 @@ export function PublicSeriesCard({
             ))}
             {compact && series.results.length > visibleResults.length ? (
               <div className="font-display text-[0.74rem] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                +{series.results.length - visibleResults.length} more result{series.results.length - visibleResults.length > 1 ? "s" : ""}
+                +{series.results.length - visibleResults.length} more result
+                {series.results.length - visibleResults.length > 1 ? "s" : ""}
               </div>
             ) : null}
           </div>

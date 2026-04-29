@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ConfirmButton } from "@/components/confirm-button";
 import { StatusToasts } from "@/components/status-toasts";
 import { useAdminSession } from "@/components/admin-session";
+import { formatTimestamp, getSeriesStatusLabel } from "@/lib/format";
 import { createBracketSeriesSummary } from "@/lib/series";
 import type { SeriesCreateInput, SeriesRecord } from "@/types/series";
 
@@ -12,32 +14,6 @@ const initialForm: SeriesCreateInput = {
   teamB: "",
   format: "bo3",
 };
-
-function formatTimestamp(timestamp: string) {
-  const date = new Date(timestamp);
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function getSeriesStatusLabel(status: SeriesRecord["status"]) {
-  switch (status) {
-    case "scheduled":
-      return "upcoming";
-    case "veto_in_progress":
-      return "veto in progress";
-    case "veto_completed":
-      return "ready for results";
-    case "completed":
-      return "completed";
-    default:
-      return String(status).replaceAll("_", " ");
-  }
-}
 
 function compareSeries(left: SeriesRecord, right: SeriesRecord) {
   if (left.bracket && right.bracket) {
@@ -58,7 +34,9 @@ function compareSeries(left: SeriesRecord, right: SeriesRecord) {
     return 1;
   }
 
-  return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+  return (
+    new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+  );
 }
 
 export function AdminSeriesHub() {
@@ -88,7 +66,11 @@ export function AdminSeriesHub() {
 
       setSeries(payload.series);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load series.");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load series.",
+      );
     } finally {
       setLoading(false);
     }
@@ -125,19 +107,17 @@ export function AdminSeriesHub() {
       setMessage("Series created.");
       await loadSeries();
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create series.");
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Failed to create series.",
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleDelete(seriesId: string) {
-    const confirmed = window.confirm("Delete this series and all its veto/results?");
-
-    if (!confirmed) {
-      return;
-    }
-
     try {
       setDeletingId(seriesId);
       setError(null);
@@ -145,12 +125,11 @@ export function AdminSeriesHub() {
 
       const response = await fetch(`/api/series/${seriesId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const payload = await response.json();
+
       if (!response.ok) {
         throw new Error(payload.error ?? "Failed to delete series.");
       }
@@ -158,7 +137,11 @@ export function AdminSeriesHub() {
       setMessage("Series deleted.");
       await loadSeries();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete series.");
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete series.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -167,46 +150,33 @@ export function AdminSeriesHub() {
   const orderedSeries = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return [...series]
-      .sort(compareSeries)
-      .filter((entry) => {
-        if (statusFilter === "open" && entry.status === "completed") {
-          return false;
-        }
+    return [...series].sort(compareSeries).filter((entry) => {
+      if (statusFilter === "open" && entry.status === "completed") return false;
+      if (statusFilter === "completed" && entry.status !== "completed")
+        return false;
+      if (statusFilter === "bracket" && !entry.bracket) return false;
+      if (statusFilter === "manual" && entry.bracket) return false;
+      if (statusFilter === "locked" && !entry.locked) return false;
+      if (!normalizedQuery) return true;
 
-        if (statusFilter === "completed" && entry.status !== "completed") {
-          return false;
-        }
-
-        if (statusFilter === "bracket" && !entry.bracket) {
-          return false;
-        }
-
-        if (statusFilter === "manual" && entry.bracket) {
-          return false;
-        }
-
-        if (statusFilter === "locked" && !entry.locked) {
-          return false;
-        }
-
-        if (!normalizedQuery) {
-          return true;
-        }
-
-        return [
-          entry.teamA,
-          entry.teamB,
-          entry.pairKey,
-          entry.bracket?.title ?? "",
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedQuery);
-      });
+      return [
+        entry.teamA,
+        entry.teamB,
+        entry.pairKey,
+        entry.bracket?.title ?? "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery);
+    });
   }, [searchQuery, series, statusFilter]);
-  const upcoming = orderedSeries.filter((entry) => entry.status !== "completed");
-  const completed = orderedSeries.filter((entry) => entry.status === "completed");
+
+  const upcoming = orderedSeries.filter(
+    (entry) => entry.status !== "completed",
+  );
+  const completed = orderedSeries.filter(
+    (entry) => entry.status === "completed",
+  );
 
   return (
     <div className="space-y-8">
@@ -221,13 +191,17 @@ export function AdminSeriesHub() {
           <p className="eyebrow">Series Hub</p>
           <h1 className="page-title">Admin Network</h1>
           <p className="page-subtitle mt-4">
-            Brackets generate their own series automatically. Manual series still work, but bracket-linked matchups are listed first.
+            Brackets generate their own series automatically. Manual series
+            still work, but bracket-linked matchups are listed first.
           </p>
         </div>
       </section>
 
       <section className="grid gap-8 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        <form className="panel px-6 py-6 md:px-8 md:py-8" onSubmit={handleCreate}>
+        <form
+          className="panel px-6 py-6 md:px-8 md:py-8"
+          onSubmit={handleCreate}
+        >
           <p className="eyebrow">Create Series</p>
           <h2 className="mt-3 font-display text-2xl font-black uppercase tracking-[-0.05em]">
             New Matchup
@@ -236,7 +210,7 @@ export function AdminSeriesHub() {
           <div className="mt-8 space-y-5">
             <div>
               <label className="label" htmlFor="series-team-a">
-                Team Alpha
+                Team A
               </label>
               <div className="tactical-input-wrap">
                 <input
@@ -245,7 +219,10 @@ export function AdminSeriesHub() {
                   placeholder="ENTER TEAM NAME"
                   value={formValue.teamA}
                   onChange={(event) =>
-                    setFormValue((current) => ({ ...current, teamA: event.target.value }))
+                    setFormValue((current) => ({
+                      ...current,
+                      teamA: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -253,7 +230,7 @@ export function AdminSeriesHub() {
 
             <div>
               <label className="label" htmlFor="series-team-b">
-                Team Bravo
+                Team B
               </label>
               <div className="tactical-input-wrap">
                 <input
@@ -262,7 +239,10 @@ export function AdminSeriesHub() {
                   placeholder="ENTER TEAM NAME"
                   value={formValue.teamB}
                   onChange={(event) =>
-                    setFormValue((current) => ({ ...current, teamB: event.target.value }))
+                    setFormValue((current) => ({
+                      ...current,
+                      teamB: event.target.value,
+                    }))
                   }
                 />
               </div>
@@ -289,7 +269,11 @@ export function AdminSeriesHub() {
               </select>
             </div>
 
-            <button className="button-primary w-full" disabled={submitting} type="submit">
+            <button
+              className="button-primary w-full"
+              disabled={submitting}
+              type="submit"
+            >
               {submitting ? "Creating..." : "Create Series"}
             </button>
           </div>
@@ -321,15 +305,7 @@ export function AdminSeriesHub() {
                   className="select"
                   value={statusFilter}
                   onChange={(event) =>
-                    setStatusFilter(
-                      event.target.value as
-                        | "all"
-                        | "open"
-                        | "completed"
-                        | "bracket"
-                        | "manual"
-                        | "locked",
-                    )
+                    setStatusFilter(event.target.value as typeof statusFilter)
                   }
                 >
                   <option value="all">All Series</option>
@@ -349,7 +325,7 @@ export function AdminSeriesHub() {
                 Active Series
               </h2>
               <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {upcoming.length} Open
+                {upcoming.length} open
               </span>
             </div>
 
@@ -360,7 +336,10 @@ export function AdminSeriesHub() {
             ) : (
               <div className="space-y-3">
                 {upcoming.map((entry) => (
-                  <article key={entry._id} className="panel px-5 py-5 md:px-6 md:py-6">
+                  <article
+                    key={entry._id}
+                    className="panel px-5 py-5 md:px-6 md:py-6"
+                  >
                     <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                       <div className="min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
@@ -376,7 +355,7 @@ export function AdminSeriesHub() {
                             </span>
                           ) : (
                             <span className="tactical-chip text-[var(--text-muted)]">
-                              Manual series
+                              Manual
                             </span>
                           )}
                           {entry.locked ? (
@@ -402,31 +381,36 @@ export function AdminSeriesHub() {
                           <span className="mono text-xs text-[var(--text-muted)]">
                             Updated {formatTimestamp(entry.updatedAt)}
                           </span>
-                          <span className="text-[var(--text-muted)]">|</span>
+                          <span className="text-[var(--text-muted)]">·</span>
                           <span>
-                            Scoreline {entry.overallScore.teamA}-{entry.overallScore.teamB}
+                            {entry.overallScore.teamA}–
+                            {entry.overallScore.teamB}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap gap-3 xl:justify-end">
                         {entry.bracket ? (
-                          <Link className="button-secondary" href={`/admin/brackets/${entry.bracket.id}`}>
+                          <Link
+                            className="button-secondary"
+                            href={`/admin/brackets/${entry.bracket.id}`}
+                          >
                             Open Bracket
                           </Link>
                         ) : null}
-                        <Link className="button-primary" href={`/admin/series/${entry._id}`}>
+                        <Link
+                          className="button-primary"
+                          href={`/admin/series/${entry._id}`}
+                        >
                           Open Series
                         </Link>
                         {!entry.bracket ? (
-                          <button
-                            className="button-danger"
+                          <ConfirmButton
                             disabled={deletingId === entry._id}
-                            onClick={() => handleDelete(entry._id)}
-                            type="button"
-                          >
-                            {deletingId === entry._id ? "Deleting..." : "Delete"}
-                          </button>
+                            label="Delete"
+                            labelPending="Deleting..."
+                            onConfirm={() => void handleDelete(entry._id)}
+                          />
                         ) : null}
                       </div>
                     </div>
@@ -442,7 +426,7 @@ export function AdminSeriesHub() {
                 Completed Series
               </h2>
               <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {completed.length} Finished
+                {completed.length} finished
               </span>
             </div>
 
@@ -451,12 +435,15 @@ export function AdminSeriesHub() {
             ) : (
               <div className="space-y-3">
                 {completed.map((entry) => (
-                  <article key={entry._id} className="panel px-5 py-5 md:px-6 md:py-6">
+                  <article
+                    key={entry._id}
+                    className="panel px-5 py-5 md:px-6 md:py-6"
+                  >
                     <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
                       <div className="min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="tactical-chip text-[var(--success)]">
-                            completed
+                            Completed
                           </span>
                           <span className="tactical-chip text-[var(--text-accent)]">
                             {entry.format}
@@ -472,7 +459,8 @@ export function AdminSeriesHub() {
                             </span>
                           ) : null}
                           <span className="mono text-sm text-[var(--text-primary)]">
-                            {entry.overallScore.teamA}-{entry.overallScore.teamB}
+                            {entry.overallScore.teamA}–
+                            {entry.overallScore.teamB}
                           </span>
                         </div>
 
@@ -495,11 +483,17 @@ export function AdminSeriesHub() {
 
                       <div className="flex flex-wrap gap-3">
                         {entry.bracket ? (
-                          <Link className="button-secondary" href={`/admin/brackets/${entry.bracket.id}`}>
+                          <Link
+                            className="button-secondary"
+                            href={`/admin/brackets/${entry.bracket.id}`}
+                          >
                             Open Bracket
                           </Link>
                         ) : null}
-                        <Link className="button-primary" href={`/admin/series/${entry._id}`}>
+                        <Link
+                          className="button-primary"
+                          href={`/admin/series/${entry._id}`}
+                        >
                           View Series
                         </Link>
                       </div>

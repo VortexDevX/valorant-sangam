@@ -1,60 +1,19 @@
-"use client";
-
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import { PublicTopbar } from "@/components/public-topbar";
 import { PublicBracketCard } from "@/components/public-bracket-card";
 import { PublicUpcomingMatchCard } from "@/components/public-upcoming-match-card";
-import { StatusToasts } from "@/components/status-toasts";
-import { getNextSeriesMap } from "@/lib/series";
-import type { BracketRecord } from "@/types/bracket";
 import { PublicSeriesCard } from "@/components/public-series-card";
+import { getAllBrackets, getAllSeries } from "@/lib/data";
+import { getNextSeriesMap } from "@/lib/series";
 import type { SeriesRecord } from "@/types/series";
 
-export default function Home() {
-  const [series, setSeries] = useState<SeriesRecord[]>([]);
-  const [brackets, setBrackets] = useState<BracketRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const loadHome = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [seriesResponse, bracketsResponse] = await Promise.all([
-          fetch("/api/series", { cache: "no-store" }),
-          fetch("/api/brackets", { cache: "no-store" }),
-        ]);
-        const [seriesPayload, bracketsPayload] = await Promise.all([
-          seriesResponse.json(),
-          bracketsResponse.json(),
-        ]);
-
-        if (!seriesResponse.ok) {
-          throw new Error(seriesPayload.error ?? "Failed to load series.");
-        }
-
-        if (!bracketsResponse.ok) {
-          throw new Error(bracketsPayload.error ?? "Failed to load brackets.");
-        }
-
-        setSeries(seriesPayload.series);
-        setBrackets(bracketsPayload.brackets);
-      } catch (loadError) {
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Failed to load home page.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadHome();
-  }, []);
+export default async function Home() {
+  const [series, brackets] = await Promise.all([
+    getAllSeries(),
+    getAllBrackets(),
+  ]);
 
   const upcoming = series.filter((entry) => entry.status !== "completed");
   const upcomingMatches = upcoming
@@ -70,8 +29,7 @@ export default function Home() {
 
   return (
     <main className="app-shell">
-      <StatusToasts error={error} onErrorDismiss={() => setError(null)} />
-      <PublicTopbar active="home" statusLabel="Public Feed" />
+      <PublicTopbar statusLabel="Public Feed" />
 
       <section className="relative isolate overflow-hidden bg-[var(--bg-panel-lowest)]">
         <div className="absolute inset-0 opacity-35">
@@ -93,7 +51,7 @@ export default function Home() {
               <span className="tactical-accent" />
               <span className="eyebrow">Tournament Overview</span>
             </div>
-            <h1 className="page-title">Valorant Sangam</h1>
+            <h1 className="page-title">Valorant Circuit</h1>
             <p className="mt-4 max-w-3xl border-l-2 border-[var(--bg-accent)] pl-4 text-sm leading-7 text-[var(--text-secondary)] md:text-lg">
               Follow upcoming matches, completed series, and team pages from one
               place.
@@ -117,106 +75,99 @@ export default function Home() {
                 team page.
               </p>
             </div>
-
-            <div className="flex items-center gap-4">
-              <span className="tactical-chip text-[var(--success)]">
-                {series.length} Series
-              </span>
-            </div>
+            <span className="tactical-chip text-[var(--success)]">
+              {series.length} Series
+            </span>
           </div>
 
-          {loading ? (
-            <div className="status-info">Loading series...</div>
-          ) : (
-            <div className="space-y-10">
-              <section className="space-y-4" id="upcoming">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-3">
-                    <span className="section-accent section-accent--upcoming">
-                      Upcoming Maps
-                    </span>
-                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                      Upcoming Matches
-                    </h3>
-                  </div>
-                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {upcomingMatches.length} ready
+          <div className="space-y-10">
+            <section className="space-y-4" id="upcoming">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-3">
+                  <span className="section-accent section-accent--upcoming">
+                    Upcoming Maps
                   </span>
+                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                    Upcoming Matches
+                  </h3>
                 </div>
-                {upcomingMatches.length === 0 ? (
-                  <div className="empty-state">
-                    No upcoming matches are ready yet.
-                  </div>
-                ) : (
-                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
-                    {upcomingMatches.map((entry) => (
-                      <PublicUpcomingMatchCard
-                        key={`${entry.series._id}-${entry.mapSlot.order}`}
-                        mapSlot={entry.mapSlot}
-                        series={entry.series}
-                        withMapBackdrop
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+                <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {upcomingMatches.length} ready
+                </span>
+              </div>
+              {upcomingMatches.length === 0 ? (
+                <div className="empty-state">
+                  No upcoming matches are ready yet.
+                </div>
+              ) : (
+                <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                  {upcomingMatches.map((entry) => (
+                    <PublicUpcomingMatchCard
+                      key={`${entry.series._id}-${entry.mapSlot.order}`}
+                      mapSlot={entry.mapSlot}
+                      series={entry.series}
+                      withMapBackdrop
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
 
-              <section className="space-y-4" id="series">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-3">
-                    <span className="section-accent section-accent--series">
-                      Series Feed
-                    </span>
-                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                      Series
-                    </h3>
-                  </div>
-                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {series.length} total
+            <section className="space-y-4" id="series">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-3">
+                  <span className="section-accent section-accent--series">
+                    Series Feed
                   </span>
+                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                    Series
+                  </h3>
                 </div>
-                {series.length === 0 ? (
-                  <div className="empty-state">No series added yet.</div>
-                ) : (
-                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
-                    {series.map((entry) => (
-                      <PublicSeriesCard
-                        key={entry._id}
-                        compact
-                        series={entry}
-                        withMapBackdrop
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
+                <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {series.length} total
+                </span>
+              </div>
+              {series.length === 0 ? (
+                <div className="empty-state">No series added yet.</div>
+              ) : (
+                <div className="grid auto-rows-fr gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                  {series.map((entry) => (
+                    <PublicSeriesCard
+                      key={entry._id}
+                      compact
+                      series={entry}
+                      withMapBackdrop
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
 
-              <section className="space-y-4" id="brackets">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="space-y-3">
-                    <span className="section-accent section-accent--bracket">
-                      Bracket Archive
-                    </span>
-                    <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
-                      Brackets
-                    </h3>
-                  </div>
-                  <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {brackets.length} total
+            <section className="space-y-4" id="brackets">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-3">
+                  <span className="section-accent section-accent--bracket">
+                    Bracket Archive
                   </span>
+                  <h3 className="font-display text-2xl font-black uppercase tracking-[-0.05em]">
+                    Brackets
+                  </h3>
                 </div>
-                {brackets.length === 0 ? (
-                  <div className="empty-state">No brackets added yet.</div>
-                ) : (
-                  <div className="grid auto-rows-fr gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {brackets.map((bracket) => (
-                      <PublicBracketCard key={bracket._id} bracket={bracket} />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-          )}
+                <span className="font-display text-[0.66rem] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {brackets.length} total
+                </span>
+              </div>
+              {brackets.length === 0 ? (
+                <div className="empty-state">No brackets added yet.</div>
+              ) : (
+                <div className="grid auto-rows-fr gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {brackets.map((bracket) => (
+                    <PublicBracketCard key={bracket._id} bracket={bracket} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </section>
       </div>
 
@@ -225,13 +176,12 @@ export default function Home() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="font-display text-lg font-black uppercase tracking-[0.18em] text-[var(--bg-accent)] sm:text-xl sm:tracking-[0.3em]">
-                Valorant Sangam
+                Valorant Circuit
               </div>
               <div className="mt-2 font-display text-[0.68rem] uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 Public tournament page
               </div>
             </div>
-
             <div className="font-display text-[0.68rem] uppercase tracking-[0.14em] text-[var(--text-muted)]">
               Built for schedules, vetoes, and results
             </div>

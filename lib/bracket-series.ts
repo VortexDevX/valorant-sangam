@@ -28,7 +28,9 @@ function getSeriesKey(round: number, match: number) {
 }
 
 function isBracketReadyForSeries(bracket: BracketRecord) {
-  return bracket.teams.every((entry) => entry.name.trim().length > 0 && entry.slug);
+  return bracket.teams.every(
+    (entry) => entry.name.trim().length > 0 && entry.slug,
+  );
 }
 
 function buildDesiredBracketSeries(
@@ -63,23 +65,28 @@ function buildDesiredBracketSeries(
 function listDesiredBracketSeries(bracket: BracketRecord) {
   return bracket.rounds
     .flatMap((round) =>
-      round.matches.map((match) => buildDesiredBracketSeries(bracket.format, match)),
+      round.matches.map((match) =>
+        buildDesiredBracketSeries(bracket.format, match),
+      ),
     )
     .filter((entry): entry is DesiredBracketSeries => entry !== null);
 }
 
-function hasSameParticipants(existing: SeriesRecord, desired: DesiredBracketSeries) {
-  return (
-    existing.pairKey === desired.pairKey &&
-    (
-      (existing.teamASlug === desired.teamASlug && existing.teamBSlug === desired.teamBSlug) ||
-      (existing.teamASlug === desired.teamBSlug && existing.teamBSlug === desired.teamASlug)
-    )
-  );
+// pairKey is derived from sorted slugs, so matching pairKey guarantees
+// same participants. The slug comparison below is intentionally removed.
+function hasSameParticipants(
+  existing: SeriesRecord,
+  desired: DesiredBracketSeries,
+) {
+  return existing.pairKey === desired.pairKey;
 }
 
 function isBracketLinkedSeriesMutable(series: SeriesRecord) {
-  return series.bracket !== null && series.veto === null && series.results.length === 0;
+  return (
+    series.bracket !== null &&
+    series.veto === null &&
+    series.results.length === 0
+  );
 }
 
 export function canSafelyReplaceBracketTeams(linkedSeries: SeriesRecord[]) {
@@ -93,10 +100,16 @@ export async function loadBracketLinkedSeries(db: Db, bracketId: string) {
     .sort({ "bracket.round": 1, "bracket.match": 1, updatedAt: -1 })
     .toArray();
 
-  return series.map((entry) => serializeSeries(entry as Record<string, unknown>));
+  return series.map((entry) =>
+    serializeSeries(entry as Record<string, unknown>),
+  );
 }
 
-export async function hasLaterRoundBracketSeries(db: Db, bracketId: string, round: number) {
+export async function hasLaterRoundBracketSeries(
+  db: Db,
+  bracketId: string,
+  round: number,
+) {
   const count = await db.collection("series").countDocuments({
     "bracket.id": bracketId,
     "bracket.round": { $gt: round },
@@ -109,7 +122,11 @@ export async function deleteBracketSeries(db: Db, bracketId: string) {
   await db.collection("series").deleteMany({ "bracket.id": bracketId });
 }
 
-export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: string | null) {
+export async function syncBracketSeries(
+  db: Db,
+  bracket: BracketRecord,
+  actor?: string | null,
+) {
   if (!isBracketReadyForSeries(bracket)) {
     return;
   }
@@ -134,9 +151,7 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
   const existingByKey = new Map<string, SeriesRecord>();
 
   for (const entry of linkedSeries) {
-    if (!entry.bracket) {
-      continue;
-    }
+    if (!entry.bracket) continue;
 
     const key = getSeriesKey(entry.bracket.round, entry.bracket.match);
 
@@ -177,20 +192,10 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
 
     const sameParticipants = hasSameParticipants(existing, desired);
     const teamsChanged =
-      (!sameParticipants ||
-        existing.format !== desired.format) &&
-      (
-        existing.teamA !== desired.teamA ||
-        existing.teamB !== desired.teamB ||
-        existing.teamASlug !== desired.teamASlug ||
-        existing.teamBSlug !== desired.teamBSlug ||
-        existing.format !== desired.format
-      );
+      !sameParticipants || existing.format !== desired.format;
     const titleChanged = existing.bracket?.title !== bracket.title;
 
-    if (!teamsChanged && !titleChanged) {
-      continue;
-    }
+    if (!teamsChanged && !titleChanged) continue;
 
     if (teamsChanged && !isBracketLinkedSeriesMutable(existing)) {
       throw new BracketSeriesConflictError(
@@ -221,16 +226,22 @@ export async function syncBracketSeries(db: Db, bracket: BracketRecord, actor?: 
   }
 }
 
-export async function syncBracketSeriesById(db: Db, bracketId: string, actor?: string | null) {
-  if (!ObjectId.isValid(bracketId)) {
-    return;
-  }
+export async function syncBracketSeriesById(
+  db: Db,
+  bracketId: string,
+  actor?: string | null,
+) {
+  if (!ObjectId.isValid(bracketId)) return;
 
-  const bracketSource = await db.collection("brackets").findOne({ _id: new ObjectId(bracketId) });
+  const bracketSource = await db
+    .collection("brackets")
+    .findOne({ _id: new ObjectId(bracketId) });
 
-  if (!bracketSource) {
-    return;
-  }
+  if (!bracketSource) return;
 
-  await syncBracketSeries(db, serializeBracket(bracketSource as Record<string, unknown>), actor);
+  await syncBracketSeries(
+    db,
+    serializeBracket(bracketSource as Record<string, unknown>),
+    actor,
+  );
 }

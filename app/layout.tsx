@@ -20,8 +20,34 @@ const displayFont = Teko({
 });
 
 export const metadata: Metadata = {
-  title: "Valorant Sangam",
-  description: "Valorant tournament control panel and match history",
+  title: "Valorant Circuit",
+  description:
+    "Run Valorant tournaments with live brackets, map vetoes, and match tracking — all in one clean dashboard.",
+  metadataBase: new URL("https://your-domain.com"), // 👈 replace with your actual domain
+  openGraph: {
+    title: "Valorant Circuit",
+    description:
+      "Run Valorant tournaments with live brackets, map vetoes, and match tracking — all in one clean dashboard.",
+    url: "https://your-domain.com", // 👈 replace
+    siteName: "Valorant Circuit",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Valorant Circuit — Tournament Control",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Valorant Circuit",
+    description:
+      "Run Valorant tournaments with live brackets, map vetoes, and match tracking — all in one clean dashboard.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({

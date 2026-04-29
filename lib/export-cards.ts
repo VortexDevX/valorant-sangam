@@ -37,7 +37,14 @@ function drawBackground(
   context.fillStyle = base;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
-  const glow = context.createRadialGradient(WIDTH * 0.72, HEIGHT * 0.12, 40, WIDTH * 0.72, HEIGHT * 0.12, 680);
+  const glow = context.createRadialGradient(
+    WIDTH * 0.72,
+    HEIGHT * 0.12,
+    40,
+    WIDTH * 0.72,
+    HEIGHT * 0.12,
+    680,
+  );
   glow.addColorStop(0, accentSoft);
   glow.addColorStop(1, "rgba(0,0,0,0)");
   context.fillStyle = glow;
@@ -77,10 +84,16 @@ function drawBrand(context: CanvasRenderingContext2D) {
 
   context.fillStyle = "#fff0e8";
   context.font = "700 42px Teko, sans-serif";
-  context.fillText("VALORANT SANGAM", 154, 132);
+  context.fillText("VALORANT CIRCUIT", 154, 132);
 }
 
-function drawEyebrow(context: CanvasRenderingContext2D, label: string, x: number, y: number, color = "#ffb2a8") {
+function drawEyebrow(
+  context: CanvasRenderingContext2D,
+  label: string,
+  x: number,
+  y: number,
+  color = "#ffb2a8",
+) {
   context.fillStyle = color;
   context.font = "700 26px Teko, sans-serif";
   context.fillText(label.toUpperCase(), x, y);
@@ -129,7 +142,12 @@ export function downloadSeriesResultCard(series: SeriesRecord) {
   const { canvas, context } = createCanvas();
   drawBackground(context, "#ff4655", "rgba(255,70,85,0.22)");
   drawBrand(context);
-  drawEyebrow(context, series.status === "completed" ? "Final Result" : "Series Snapshot", 120, 214);
+  drawEyebrow(
+    context,
+    series.status === "completed" ? "Final Result" : "Series Snapshot",
+    120,
+    214,
+  );
 
   context.fillStyle = "#f6efe7";
   context.font = "700 118px Teko, sans-serif";
@@ -188,7 +206,11 @@ export function downloadSeriesResultCard(series: SeriesRecord) {
 
     context.fillStyle = "#f6efe7";
     context.font = "700 34px Teko, sans-serif";
-    context.fillText(`MAP ${entry.order} | ${entry.map.toUpperCase()}`, 1042, y);
+    context.fillText(
+      `MAP ${entry.order} | ${entry.map.toUpperCase()}`,
+      1042,
+      y,
+    );
 
     context.fillStyle = "rgba(255,243,224,0.78)";
     context.font = "500 26px Barlow, sans-serif";

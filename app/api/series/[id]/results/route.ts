@@ -5,23 +5,16 @@ import {
 } from "@/lib/bracket-series";
 import { getAuthorizedAdmin } from "@/lib/auth";
 import { logApiError } from "@/lib/api-errors";
+import { resolveSeriesParams } from "@/lib/api-helpers";
 import { getDb } from "@/lib/mongodb";
-import { getNextSeriesMap, getWinnerFromScore, serializeSeries } from "@/lib/series";
+import {
+  getNextSeriesMap,
+  getWinnerFromScore,
+  serializeSeries,
+} from "@/lib/series";
 import { normalizeScore, seriesResultSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
-
-async function resolveId(
-  context: { params: Promise<{ id: string }> },
-): Promise<ObjectId | null> {
-  const { id } = await context.params;
-
-  if (!ObjectId.isValid(id)) {
-    return null;
-  }
-
-  return new ObjectId(id);
-}
 
 export async function POST(
   request: Request,
@@ -34,7 +27,8 @@ export async function POST(
       return Response.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const objectId = await resolveId(context);
+    const objectId = await resolveSeriesParams(context);
+
     if (!objectId) {
       return Response.json({ error: "Invalid series id." }, { status: 400 });
     }
@@ -85,19 +79,12 @@ export async function POST(
       updatedAt: now,
     };
 
-    const writeResult = await db.collection("series").updateOne(
-      {
-        _id: objectId,
-        "results.order": { $ne: nextMap.order },
-      },
-      {
+    const writeResult = await db
+      .collection("series")
+      .updateOne({ _id: objectId, "results.order": { $ne: nextMap.order } }, {
         $push: { results: nextResult },
-        $set: {
-          updatedAt: now,
-          updatedBy: admin,
-        },
-      } as never,
-    );
+        $set: { updatedAt: now, updatedBy: admin },
+      } as never);
 
     if (!writeResult.modifiedCount) {
       return Response.json(
@@ -107,15 +94,15 @@ export async function POST(
     }
 
     const updated = await db.collection("series").findOne({ _id: objectId });
-    const serializedUpdated = serializeSeries(updated as Record<string, unknown>);
+    const serializedUpdated = serializeSeries(
+      updated as Record<string, unknown>,
+    );
 
     if (serializedUpdated.bracket) {
       await syncBracketSeriesById(db, serializedUpdated.bracket.id, admin);
     }
 
-    return Response.json({
-      series: serializedUpdated,
-    });
+    return Response.json({ series: serializedUpdated });
   } catch (error) {
     if (error instanceof BracketSeriesConflictError) {
       return Response.json({ error: error.message }, { status: 409 });

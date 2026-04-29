@@ -23,12 +23,12 @@ export const metadata: Metadata = {
   title: "Valorant Circuit",
   description:
     "Run Valorant tournaments with live brackets, map vetoes, and match tracking — all in one clean dashboard.",
-  metadataBase: new URL("https://your-domain.com"), // 👈 replace with your actual domain
+  metadataBase: new URL("https://valorant-circuit.vercel.app/"),
   openGraph: {
     title: "Valorant Circuit",
     description:
       "Run Valorant tournaments with live brackets, map vetoes, and match tracking — all in one clean dashboard.",
-    url: "https://your-domain.com", // 👈 replace
+    url: "https://valorant-circuit.vercel.app/",
     siteName: "Valorant Circuit",
     images: [
       {
